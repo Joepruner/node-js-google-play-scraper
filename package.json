@@ -7,10 +7,14 @@
   },
   "dependencies": {
     "cookie-parser": "~1.4.3",
+    "csv-parser": "^2.1.0",
     "debug": "~2.6.9",
     "express": "~4.16.0",
+    "fast-csv": "^2.4.1",
     "google-play-scraper": "^6.2.3",
     "http-errors": "~1.6.2",
+    "jshint": "^2.10.0",
+    "json2csv": "^4.3.3",
     "morgan": "~1.9.0",
     "pug": "2.0.0-beta11"
   }
