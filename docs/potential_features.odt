@@ -1,0 +1,5 @@
+﻿Google Play Scraper Potential Features:
+
+    • gplay.review():
+        ◦ Ignore reviews that have a text attribute of less than X amount of words. 
+

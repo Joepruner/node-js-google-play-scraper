@@ -1,0 +1,12 @@
+﻿Google Play Scraper Questions, Limitations and Concerns:
+
+    • gplay.reviews():
+        ◦ Will need to change gplay.reviews() language option to get to get non-english reviews.
+        ◦ 
+    • gplay.search():
+        ◦ Concerns:
+            ▪ gplay.search() is not finding exact matches for app names: i.e. “OLX Free Classifieds” seems to now be called “OLX: Buy & Sell near you”. 
+            ▪ At least one app (“OLX Free Classifieds” aka “OLX: Buy & Sell near you”) seems to be ‘unsearchable’ by the scraper, or even manually within play.google.com site(only Brazil and Arabia version are found), but english version can be found by googling “OLX: Buy & Sell near you”. 
+        ◦ Questions:
+            ▪ Should we be considering country specific versions of apps? i.e. OLX Brazil has 900k+ and OLX Arabia has 200K+ ratings/reviews. OLX India(english) has 1.4M+
+            ▪ Should be be considering PRO/Lite versions of apps as separate?

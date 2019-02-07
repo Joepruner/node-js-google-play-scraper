@@ -1,0 +1,6 @@
+﻿Google Play Scraper Known Bugs:
+
+    • CSV-Parser or json2csv:
+        ◦ Individual header values are being appended to the end of output csv rows.
+        ◦ 
+
