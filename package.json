@@ -6,6 +6,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "acorn": "^6.0.7",
     "cookie-parser": "~1.4.3",
     "csv-parser": "^2.1.0",
     "csvtojson": "^2.0.8",
