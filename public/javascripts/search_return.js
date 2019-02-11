@@ -3,6 +3,7 @@ const fs = require('fs');
 const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
 const csvtojson = require('csvtojson')
+import * as Promise from 'bluebird';
 
 const fields = ['url', 'text', 'userName', 'date', 'score', 'scoreText'];
 
@@ -33,6 +34,7 @@ var app_data = function getAppData(at) { // sample async action
 var app_ids = function getAppIds(aid) {
     // console.log(at['title']);
     return new Promise(resolve => setTimeout(() => resolve(
+
         gplay.reviews({
             appId: aid[0]['appId'],
             page: 0,
@@ -49,7 +51,8 @@ csvtojson()
         // app_details.then(console.log);
         var results = Promise.all(app_details);
         // console.log(results);
-        results.then(data => {
+        // results.then(data => {
+            results.spread
             // console.log(data);
             for (var i = 0; i < 5; i++) {
                 var apps = json2csvParserApps.parse(data[i]);
