@@ -27,7 +27,7 @@ var category_input_path = '../../input_data/short_app_category_list.csv';
 var apps_output_path = '../../output_data/detailed_worst_apps.csv';
 var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/all_detailed_worst_apps.csv';
 var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/newest_reviews_worst_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/helpfulness_reviews_worst_apps.csv';
 
 // var titles_input_path = '../../input_data/best_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
@@ -71,7 +71,7 @@ var getAppReviews = function getAppReviews(aid, num, appTitle, timeout) {
         gplay.reviews({
             appId: aid,
             page: num,
-            sort: gplay.sort.NEWEST,
+            sort: gplay.sort.HELPFULNESS,
             throttle: 3
         }, appTitle)), timeout));
 };
@@ -104,7 +104,7 @@ csvtojson()
             for (var i = 0; i < 112; i++) {
 
                 if (i % 27 == 0) {
-                    var rand = getRndInteger(1, 6);
+                    var rand = getRndInteger(1, 8);
                     console.log(i);
                     console.log("Sleeping for " + rand + " seconds.");
                     sleep.sleep(rand);
@@ -127,11 +127,14 @@ csvtojson()
 // part1 with no sleep, throttle 40, timeout *1.25 36,161
 // part1 with no sleep, throttle 20, timeout *1.25 45,801
 // part1 with no sleep, throttle 10, timeout *1.25 49,280
-// all with sleep, i%50, throttle 10, timout *1.25 -- 102,400
-// all with sleep, i%50, throttle 5, timout *1.4 -- 102,440
-// all with sleep, i%50, throttle 2, timout *2 -- 102,400
-// all with sleep, i%35, throttle 3, timout *1.6 -- 102,795
-// all with sleep, i%27, throttle 3, timout *1.7 -- 103,041 BOOM
+// all with sleep, i%50 1-6, throttle 10, timout *1.25 -- 102,400
+// all with sleep, i%50 1-6, throttle 5, timout *1.4 -- 102,440
+// all with sleep, i%50 1-6, throttle 2, timout *2 -- 102,400
+// all with sleep, i%35 1-6, throttle 3, timout *1.6 -- 102,795
+// all with sleep, i%27 1-6, throttle 3, timout *1.7 -- 103,041 BOOM
+// all with sleep, i%27 1-6, throttle 3, timout *1.7 -- 102,197
+// all with sleep, i%27 1-6, throttle 3, timout *1.7 -- 102,117
+// all with sleep, i%27 1-8, throttle 3, timout *1.7 -- 103,038 BOOM Helpfulness
 
 
 //Total should be 103,040
