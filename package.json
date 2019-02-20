@@ -16,9 +16,10 @@
     "fast-csv": "^2.4.1",
     "google-play-scraper": "^6.2.3",
     "http-errors": "~1.6.2",
-    "jshint": "^2.10.0",
-    "json2csv": "^4.3.3",
+    "jshint": "^2.10.1",
+    "json2csv": "^4.3.4",
     "morgan": "~1.9.0",
+    "node-gyp": "^3.8.0",
     "pug": "2.0.0-beta11",
     "sleep": "^6.0.0"
   }
