@@ -1,6 +1,6 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
-const csv = require('csv-parser');
+// const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
 const csvtojson = require('csvtojson');
 const sleep = require('sleep');
@@ -22,20 +22,22 @@ const json2csvParserReviewsFirst = new Json2csvParser({
 });
 // var titles_input_path = '../../input_data/SHORT_TEST_worst_app_titles.csv';
 // var titles_input_path = '../../input_data/worst_app_titles.csv';
-var titles_input_path = '../../input_data/SHORT_worst_mod_app_titles.csv';
+var titles_input_path = '../../input_data/worst_mod_app_titles.csv';
 var category_input_path = '../../input_data/short_app_category_list.csv';
 var apps_output_path = '../../output_data/detailed_worst_apps.csv';
+var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/all_detailed_worst_apps.csv';
 var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/newest_reviews_worst_apps.csv';
 
 // var titles_input_path = '../../input_data/best_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
 // var reviews_output_path = '../../output_data/reviews_top_free_apps.csv';
 
 // var titles_input_stream = fs.createReadStream(titles_input_path, { encoding: 'utf8' });
-var apps_output_stream = fs.createWriteStream(apps_output_path, {
+var apps_output_stream = fs.createWriteStream(external_apps_output_path, {
     encoding: 'utf8'
 });
-var reviews_output_stream = fs.createWriteStream(reviews_output_path, {
+var reviews_output_stream = fs.createWriteStream(external_reviews_output_path, {
     encoding: 'utf8',
     flags: 'a'
 });
@@ -52,8 +54,8 @@ var getAppDetails = function getAppDetails(at) { // sample async action
             term: at['title'],
             num: 1,
             fullDetail: true,
-            throttle: 10
-        })), 300));
+            throttle: 2
+        })), 100));
 };
 
 /**
@@ -63,17 +65,19 @@ var getAppDetails = function getAppDetails(at) { // sample async action
  * @param {string} appTitle - Used to add an appTitle field to the JSON obj
  * returned from gplay.reviews. NOT used for searching for app.
  */
-var getAppReviews = function getAppReviews(aid, num, appTitle) {
+var getAppReviews = function getAppReviews(aid, num, appTitle, timeout) {
     // console.log(at['title']);
     return new Promise(resolve => setTimeout(() => resolve(
         gplay.reviews({
             appId: aid,
             page: num,
             sort: gplay.sort.NEWEST,
-            throttle: 30
-        }, appTitle)), 300));
+            throttle: 3
+        }, appTitle)), timeout));
 };
-
+function getRndInteger(min, max) {
+    return Math.floor(Math.random() * (max - min)) + min;
+}
 csvtojson()
     .fromFile(titles_input_path)
     .then((titles) => {
@@ -94,17 +98,40 @@ csvtojson()
         var parsed_headers = json2csvParserReviewsFirst.parse();
         reviews_output_stream.write(parsed_headers);
         reviews_output_stream.write('\n');
+        var review_page_count = 0;
 
         appDetails.forEach(app => {
-            for (var i = 0; i < 5; i++) {
-                if(i%2==0){
-                    sleep.sleep(5);
+            for (var i = 0; i < 112; i++) {
+
+                if (i % 27 == 0) {
+                    var rand = getRndInteger(1, 6);
+                    console.log(i);
+                    console.log("Sleeping for " + rand + " seconds.");
+                    sleep.sleep(rand);
                 }
-                getAppReviews(app[0].appId, i, app[0].appTitle).then(function (review) {
+                getAppReviews(app[0].appId, i, app[0].appTitle, i * 1.7).then(function (review) {
+                    if (review.length < 1 || review == undefined) {
+                        return false;
+                    }
+
                     var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
+                    // console.log(parsed_app_reviews);
                     reviews_output_stream.write(parsed_app_reviews);
                     reviews_output_stream.write('\n');
                 });
             }
         });
     });
+
+
+// part1 with no sleep, throttle 40, timeout *1.25 36,161
+// part1 with no sleep, throttle 20, timeout *1.25 45,801
+// part1 with no sleep, throttle 10, timeout *1.25 49,280
+// all with sleep, i%50, throttle 10, timout *1.25 -- 102,400
+// all with sleep, i%50, throttle 5, timout *1.4 -- 102,440
+// all with sleep, i%50, throttle 2, timout *2 -- 102,400
+// all with sleep, i%35, throttle 3, timout *1.6 -- 102,795
+// all with sleep, i%27, throttle 3, timout *1.7 -- 103,041 BOOM
+
+
+//Total should be 103,040
