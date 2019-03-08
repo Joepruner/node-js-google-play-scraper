@@ -27,7 +27,7 @@ var category_input_path = '../../input_data/short_app_category_list.csv';
 var apps_output_path = '../../output_data/detailed_worst_apps.csv';
 var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/all_detailed_worst_apps.csv';
 var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/helpfulness_reviews_worst_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/newest_reviews_worst_apps.csv';
 
 // var titles_input_path = '../../input_data/best_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
@@ -71,7 +71,7 @@ var getAppReviews = function getAppReviews(aid, num, appTitle, timeout) {
         gplay.reviews({
             appId: aid,
             page: num,
-            sort: gplay.sort.HELPFULNESS,
+            sort: gplay.sort.NEWEST,
             throttle: 3
         }, appTitle)), timeout));
 };
@@ -106,7 +106,7 @@ csvtojson()
                 if (i % 27 == 0) {
                     var rand = getRndInteger(1, 8);
                     console.log(i);
-                    console.log("Sleeping for " + rand + " seconds.");
+                    // console.log("Sleeping for " + rand + " seconds.");
                     sleep.sleep(rand);
                 }
                 getAppReviews(app[0].appId, i, app[0].appTitle, i * 1.7).then(function (review) {
