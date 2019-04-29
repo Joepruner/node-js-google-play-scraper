@@ -115,7 +115,6 @@ csvtojson()
                     }
 
                     var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
-                    // console.log(parsed_app_reviews);
                     reviews_output_stream.write(parsed_app_reviews);
                     reviews_output_stream.write('\n');
                 });
