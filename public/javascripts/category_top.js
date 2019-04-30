@@ -14,22 +14,22 @@ const opts = {
     'header': false
 };
 
-const json2csvParserTitles = new Json2csvParser();
+const json2csvParserCategoryTitles = new Json2csvParser();
 const json2csvParserApps = new Json2csvParser();
 const json2csvParserReviewsRest = new Json2csvParser(opts);
 const json2csvParserReviewsFirst = new Json2csvParser({
     fields
 });
 // var titles_input_path = '../../input_data/SHORT_TEST_worst_app_titles.csv';
-// var titles_input_path = '../../input_data/worst_app_titles.csv';
-var titles_input_path = '../../input_data/worst_mod_app_titles.csv';
-//var category_input_path = '../../input_data/short_app_category_list.csv';
-//var apps_output_path = '../../output_data/detailed_worst_apps.csv';
-var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_all_detailed_worst_apps.csv';
-//var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_helpfulness_reviews_worst_apps.csv';
+//var titles_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/titles_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
+var titles_input_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/titles.csv';
+// var category_input_path = '../../input_data/short_app_category_list.csv';
+// var apps_output_path = '../../output_data/detailed_worst_apps.csv';
+var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_all_detailed_TOP_FREE_EDUCATION_apps.csv';
+// var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_newest_reveiws_TOP_FREE_EDUCATION_apps.csv';
 
-// var titles_input_path = '../../input_data/best_app_titles.csv';
+// var titles_input_path = '../../input_data/category_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
 // var reviews_output_path = '../../output_data/reviews_top_free_apps.csv';
 
@@ -41,6 +41,10 @@ var reviews_output_stream = fs.createWriteStream(external_reviews_output_path, {
     encoding: 'utf8',
     flags: 'a'
 });
+// var category_titles_output_stream = fs.createWriteStream(titles_output_path, {
+//     encoding: 'utf8',
+//     flags: 'a'
+// });
 
 /**
  * Returns JSON array of full app details from the first (or more) search result(s),
@@ -71,25 +75,44 @@ var getAppReviews = function getAppReviews(aid, num, appTitle, timeout) {
         gplay.reviews({
             appId: aid,
             page: num,
-            sort: gplay.sort.HELPFULNESS,
+            sort: gplay.sort.NEWEST,
             throttle: 3
         }, appTitle)), timeout));
 };
 function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
+//Write titles to CSV to read back in.
+
+// var getAppTitlesByCategory = function getAppTitlesByCategory() {
+//     return new Promise(resolve => setTimeout(() => resolve(
+//         gplay.list({
+//             category: gplay.category.HEALTH_AND_FITNESS,
+//             collection: gplay.collection.TOP_FREE,
+//             num: 10
+//         }).then(function(appCategoryTitles){
+//             var parsed_app_category_titles = json2csvParserCategoryTitles.parse(appCategoryTitles);
+//             category_titles_output_stream.write(parsed_app_category_titles);
+//             category_titles_output_stream.write('\n');
+//         })),100));
+// };
+// getAppTitlesByCategory()
+
+
+
 csvtojson()
     .fromFile(titles_input_path)
     .then((titles) => {
+        console.log(titles)
 
         var pending_getAppDetails_promise = titles.map(getAppDetails);
         var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
-        console.log(titles);
+        // console.log(titles);
         return resolved_getAppDetails_promise;
     }).then(function (appDetails) {
-        console.log(appDetails)
+        // console.log(appDetails)
         var num_titles = Object.keys(appDetails).length;
-        console.log(num_titles);
+        // console.log(num_titles);
         for (var i = 0; i < num_titles; i++) {
             var parsed_app_details = json2csvParserApps.parse(appDetails[i]);
             apps_output_stream.write(parsed_app_details);
