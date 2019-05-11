@@ -25,9 +25,9 @@ const json2csvParserReviewsFirst = new Json2csvParser({
 var titles_input_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/titles.csv';
 // var category_input_path = '../../input_data/short_app_category_list.csv';
 // var apps_output_path = '../../output_data/detailed_worst_apps.csv';
-var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_all_detailed_TOP_FREE_EDUCATION_apps.csv';
+var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_all_detailed_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
 // var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-04-30_newest_reveiws_TOP_FREE_EDUCATION_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_newest_reveiws_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
 
 // var titles_input_path = '../../input_data/category_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
@@ -132,7 +132,7 @@ csvtojson()
                     // console.log("Sleeping for " + rand + " seconds.");
                     sleep.sleep(rand);
                 }
-                getAppReviews(app[0].appId, i, app[0].appTitle, i * 1.7).then(function (review) {
+                getAppReviews(app[0].appId, i, app[0].title, i * 1.7 ).then(function (review) {
                     if (review.length < 1 || review == undefined) {
                         return false;
                     }
