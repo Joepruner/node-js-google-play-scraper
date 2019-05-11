@@ -23,11 +23,11 @@ const json2csvParserReviewsFirst = new Json2csvParser({
 // var titles_input_path = '../../input_data/SHORT_TEST_worst_app_titles.csv';
 // var titles_input_path = '../../input_data/worst_app_titles.csv';
 var titles_input_path = '../../input_data/worst_mod_app_titles.csv';
-var category_input_path = '../../input_data/short_app_category_list.csv';
-var apps_output_path = '../../output_data/detailed_worst_apps.csv';
-var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/all_detailed_worst_apps.csv';
-var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/helpfulness_reviews_worst_apps.csv';
+//var category_input_path = '../../input_data/short_app_category_list.csv';
+//var apps_output_path = '../../output_data/detailed_worst_apps.csv';
+var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_all_detailed_worst_apps.csv';
+//var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
+var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_rating_reviews_worst_apps.csv';
 
 // var titles_input_path = '../../input_data/best_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
@@ -66,12 +66,12 @@ var getAppDetails = function getAppDetails(at) { // sample async action
  * returned from gplay.reviews. NOT used for searching for app.
  */
 var getAppReviews = function getAppReviews(aid, num, appTitle, timeout) {
-    // console.log(at['title']);
+    // console.log(appTitle);
     return new Promise(resolve => setTimeout(() => resolve(
         gplay.reviews({
             appId: aid,
             page: num,
-            sort: gplay.sort.HELPFULNESS,
+            sort: gplay.sort.RATING,
             throttle: 3
         }, appTitle)), timeout));
 };
@@ -87,7 +87,8 @@ csvtojson()
         // console.log(titles);
         return resolved_getAppDetails_promise;
     }).then(function (appDetails) {
-        // console.log(appDetails)
+        
+        // appDetails = appDetails[0]
         var num_titles = Object.keys(appDetails).length;
         // console.log(num_titles);
         for (var i = 0; i < num_titles; i++) {
@@ -106,10 +107,10 @@ csvtojson()
                 if (i % 27 == 0) {
                     var rand = getRndInteger(1, 8);
                     console.log(i);
-                    console.log("Sleeping for " + rand + " seconds.");
+                    // console.log("Sleeping for " + rand + " seconds.");
                     sleep.sleep(rand);
                 }
-                getAppReviews(app[0].appId, i, app[0].appTitle, i * 1.7).then(function (review) {
+                getAppReviews(app[0].appId, i, app[0].title, i * 1.7).then(function (review) {
                     if (review.length < 1 || review == undefined) {
                         return false;
                     }
