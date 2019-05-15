@@ -22,12 +22,12 @@ const json2csvParserReviewsFirst = new Json2csvParser({
 });
 // var titles_input_path = '../../input_data/SHORT_TEST_worst_app_titles.csv';
 //var titles_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/titles_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
-var titles_input_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/titles.csv';
+var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/input_data/titles.csv';
 // var category_input_path = '../../input_data/short_app_category_list.csv';
 // var apps_output_path = '../../output_data/detailed_worst_apps.csv';
-var external_apps_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_all_detailed_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
+var external_apps_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_all_detailed_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
 // var reviews_output_path = '../../output_data/reviews_worst_apps.csv';
-var external_reviews_output_path = '/media/joepruner/SOUND BANK/DATA/node-js-google-play-scraper/2019-05-09_newest_reveiws_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
+var external_reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_newest_reveiws_TOP_FREE_HEALTH_AND_FITNESS_apps.csv';
 
 // var titles_input_path = '../../input_data/category_app_titles.csv';
 // var apps_output_path = '../../output_data/detailed_top_free_apps.csv';
@@ -55,7 +55,7 @@ var getAppDetails = function getAppDetails(at) { // sample async action
     // console.log(at['title']);
     return new Promise(resolve => setTimeout(() => resolve(
         gplay.search({
-            term: at['title'],
+            term: at.title,
             num: 1,
             fullDetail: true,
             throttle: 2
@@ -103,7 +103,7 @@ function getRndInteger(min, max) {
 csvtojson()
     .fromFile(titles_input_path)
     .then((titles) => {
-        console.log(titles)
+        console.log(titles);
 
         var pending_getAppDetails_promise = titles.map(getAppDetails);
         var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);

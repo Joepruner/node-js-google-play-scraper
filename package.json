@@ -7,20 +7,20 @@
   },
   "dependencies": {
     "acorn": "^6.0.7",
-    "bluebird": "^3.5.3",
-    "cookie-parser": "~1.4.3",
-    "csv-parser": "^2.1.0",
+    "bluebird": "^3.5.4",
+    "cookie-parser": "^1.4.4",
+    "csv-parser": "^2.2.0",
     "csvtojson": "^2.0.8",
     "debug": "~2.6.9",
     "express": "~4.16.0",
-    "fast-csv": "^2.4.1",
-    "google-play-scraper": "^6.2.3",
+    "fast-csv": "^2.5.0",
+    "google-play-scraper": "^6.2.6",
     "http-errors": "~1.6.2",
     "jshint": "^2.10.1",
     "json2csv": "^4.3.4",
     "morgan": "~1.9.0",
-    "node-gyp": "^3.8.0",
-    "pug": "2.0.0-beta11",
-    "sleep": "^6.0.0"
+    "node-gyp": "^4.0.0",
+    "pug": "^2.0.3",
+    "sleep": "^6.1.0"
   }
 }
