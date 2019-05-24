@@ -26,7 +26,14 @@ const json2csvParserAppTitles = new Json2csvParser({
     fields,
     quote: '',
 });
-const json2csvParserApps = new Json2csvParser();
+fields = ["title", "installs", "minInstalls", "scoreText", "ratings", "reviews", "price", "free",
+    "currency", "priceText", "offersIAP", "size", "androidVersion", "androidVersionText", "developer", "genreId",
+    "familyGenreId", "adSupported", "released", "updated", "version", "recentChanges", "appId"
+];
+
+const json2csvParserAppFullDetails = new Json2csvParser({
+    fields,
+});
 const json2csvParserReviewsRest = new Json2csvParser(opts);
 
 
@@ -41,12 +48,12 @@ var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getD
 var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/input_data/categories(8)_all_titles_NO_SEP.csv';
 // var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/all_app_titles/by_category/';
 
-var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/reviews/' + date + '_app_details_';
+var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details_';
 // var external_apps_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/worst_power_consumption_apps/' + date + '_all_details_worst_';
 // var all_titles_from_dictionary_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/all_app_titles/' + date + '_all_app_titles_';
 
 // var external_reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/' + date + '_newest_reveiws_TOP_FREE_';
-var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/reviews/' + date + '_reviews_';
+var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews_';
 
 
 
@@ -182,7 +189,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                                         encoding: 'utf8',
                                         flags: 'a'
                                     });
-                                    var parsed_app_details = json2csvParserApps.parse(app);
+                                    var parsed_app_details = json2csvParserAppFullDetails.parse(fullDetails);
                                     apps_output_stream.write(parsed_app_details);
                                     apps_output_stream.close();
                                     return fullDetails;
