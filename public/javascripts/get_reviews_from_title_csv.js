@@ -1,7 +1,8 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
 const path = require('path');
-const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
+// const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
+const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'by_dictionary/');
 console.log(directoryPath);
 // const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
@@ -179,13 +180,14 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                             // sleep.sleep(15);
                             try {
                                 getAppFullDetails(app[0].appId).then(function (fullDetails) {
-                                    // var collection;
-                                    // if (fullDetails.free == true) {
-                                    //     collection = 'FREE';
-                                    // } else {
-                                    //     collection = 'PAID';
-                                    // }
-                                    var apps_output_stream = fs.createWriteStream(app_details_output_path + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv', {
+                                    var price_collection;
+                                    if (fullDetails.free == true) {
+                                        price_collection = 'FREE';
+                                    } else {
+                                        price_collection = 'PAID';
+                                    }
+
+                                    var apps_output_stream = fs.createWriteStream(app_details_output_path + fullDetails.genreId + '_' + price_collection + '_apps.csv', {
                                         encoding: 'utf8',
                                         flags: 'a'
                                     });
@@ -194,7 +196,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                                     apps_output_stream.close();
                                     return fullDetails;
                                 }).then((fullDetails) => {
-                                    console.log(app[0]);
+                                    console.log(fullDetails.reviews);
+                                    var price_collection;
+                                    if (fullDetails.free == true) {
+                                        price_collection = 'FREE';
+                                    } else {
+                                        price_collection = 'PAID';
+                                    }
                                     // console.log(fullDetails);
                                     for (var i = 0; i < 112; i++) {
                                         // if (i % 27 == 0) {
@@ -213,13 +221,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                                                     return false;
                                                 }
 
-                                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv', {
+                                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + price_collection + '_apps.csv', {
                                                     encoding: 'utf8',
                                                     flags: 'a'
                                                 });
 
                                                 // try {
-                                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv')) {
+                                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + price_collection + '_apps.csv')) {
 
                                                 } else {
                                                     var parsed_headers = json2csvParserReviewsFirst.parse();
