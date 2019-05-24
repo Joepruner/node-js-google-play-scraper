@@ -1,7 +1,7 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
 const path = require('path');
-const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'original8_categories/');
+const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
 console.log(directoryPath);
 // const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
@@ -65,7 +65,7 @@ var getAppDetails = function getAppDetails(at) { // sample async action
                 num: 1,
                 // fullDetail: true,
                 throttle: 3
-            })), 120000));
+            })), 5000));
     } catch (err) {
         console.log("Error inside getAppDetails" + err);
     }
@@ -81,7 +81,7 @@ var getAppFullDetails = function getAppFullDetails(aid) {
             gplay.app({
                 appId: aid,
                 throttle: 3
-            })), 120000));
+            })), 5000));
     } catch (err) {
         console.log("Error inside getAppFullDetails" + err);
     }
@@ -103,7 +103,7 @@ var getAppReviews = function getAppReviews(aid, num, appTitle) {
                 page: num,
                 sort: gplay.sort.NEWEST,
                 throttle: 3
-            }, appTitle)), 120000));
+            }, appTitle)), 5000));
     } catch (err) {
         console.log("Error inside getAppReviews" + err);
     }
