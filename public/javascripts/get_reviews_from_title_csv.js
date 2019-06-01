@@ -17,7 +17,7 @@ const opts = {
     'header': false
 };
 
-var fields = ['appTitle', 'userName', 'date', 'score', 'text'];
+var fields = ['appTitle', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
 const json2csvParserReviewsFirst = new Json2csvParser({
     fields
 });
@@ -30,8 +30,9 @@ const json2csvParserReviewsRest = new Json2csvParser(opts);
 // });
 
 var fields = ['title', 'installs', 'minInstalls', 'scoreText', 'ratings', 'reviews', 'price', 'free',
-    'currency', 'priceText', 'offersIAP', 'size', 'androidVersion', 'androidVersionText', 'developer', 'genreId',
-    'familyGenreId', 'adSupported', 'released', 'updated', 'version', 'recentChanges', 'appId'
+    'currency', 'priceText', 'offersIAP', 'size', 'androidVersion', 'androidVersionText', 'developer',
+    'genreId', 'familyGenreId', 'developerId','contentRating',
+    'adSupported', 'released', 'updated', 'version', 'recentChanges', 'appId'
 ];
 
 const json2csvParserAppFullDetailsFirst = new Json2csvParser({
@@ -69,6 +70,9 @@ var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_dat
  * Returns JSON array of basic app details from the first (or more) search result(s),
  * based on the app title search term.
  * @param {string} at - The title of the app being searched for.
+ * NOTE: currently the "fullDetail" option is not working for gplay.search() so
+ * that is why the getAppFullDetails -> gplay.app() function is needed.
+ * gplay.search() will get the appId, and use that in gplay.app() to get full details.
  */
 var getAppDetails = function getAppDetails(at) { // sample async action
     // console.log(at['title']);
@@ -78,7 +82,7 @@ var getAppDetails = function getAppDetails(at) { // sample async action
                 term: at.title,
                 num: 1,
                 // fullDetail: true,
-                throttle: 10
+                throttle: 3
             })), 2000));
     } catch (err) {
         console.log("Error inside getAppDetails" + err);
@@ -94,7 +98,7 @@ var getAppFullDetails = function getAppFullDetails(aid) {
         return new Promise(resolve => setTimeout(() => resolve(
             gplay.app({
                 appId: aid,
-                throttle: 10
+                throttle: 3
             })), 2000));
     } catch (err) {
         console.log("Error inside getAppFullDetails" + err);
@@ -170,15 +174,18 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                         try {
                             var pending_getAppDetails_promise = titles.map(getAppDetails);
 
-                            var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
+
                             // sleep.sleep(2);
-                            return resolved_getAppDetails_promise;
+                            return pending_getAppDetails_promise;
                         } catch (err) {
-                            console.log("Error in getAppDetails: " + err);
+                            console.log("Error in pending_getAppDetails: " + err);
                         }
-                    }).then(function (appDetails) {
+                    }).then(function (pending_getAppDetails_promise) {
                         // console.log(appDetails);
                         // var num_titles = Object.keys(appDetails).length;
+                        var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
+                        return resolved_getAppDetails_promise;
+                    }).then(function(appDetails){
                         appDetails.forEach(app => {
                             // sleep.sleep(15);
                             try {
