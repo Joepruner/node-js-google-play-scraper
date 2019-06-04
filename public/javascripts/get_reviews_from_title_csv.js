@@ -1,11 +1,12 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
 const path = require('path');
-const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
+// const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
+const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'by_dictionary/');
 console.log(directoryPath);
 // const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
-const csvtojson = require('csvtojson');
+const csvtojsonV2 = require('csvtojson/v2');
 const reorder = require('csv-reorder');
 const v8 = require('v8');
 
@@ -16,25 +17,32 @@ const opts = {
     'header': false
 };
 
-var fields = ['appTitle', 'userName', 'date', 'score', 'text'];
+var fields = ['appTitle', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
 const json2csvParserReviewsFirst = new Json2csvParser({
     fields
 });
+const json2csvParserReviewsRest = new Json2csvParser(opts);
 
-fields = ['title'];
-const json2csvParserAppTitles = new Json2csvParser({
-    fields,
-    quote: '',
-});
-fields = ["title", "installs", "minInstalls", "scoreText", "ratings", "reviews", "price", "free",
-    "currency", "priceText", "offersIAP", "size", "androidVersion", "androidVersionText", "developer", "genreId",
-    "familyGenreId", "adSupported", "released", "updated", "version", "recentChanges", "appId"
+// fields = ['title'];
+// const json2csvParserAppTitles = new Json2csvParser({
+//     fields,
+//     quote: '',
+// });
+
+var fields = ['title', 'installs', 'minInstalls', 'scoreText', 'ratings', 'reviews', 'price', 'free',
+    'currency', 'priceText', 'offersIAP', 'size', 'androidVersion', 'androidVersionText', 'developer',
+    'genreId', 'familyGenreId', 'developerId','contentRating',
+    'adSupported', 'released', 'updated', 'version', 'recentChanges', 'appId'
 ];
 
-const json2csvParserAppFullDetails = new Json2csvParser({
-    fields,
+const json2csvParserAppFullDetailsFirst = new Json2csvParser({
+    fields
 });
-const json2csvParserReviewsRest = new Json2csvParser(opts);
+const json2csvParserAppFullDetailsRest = new Json2csvParser({
+    'header': false,
+    fields
+});
+
 
 
 var sort_type = [gplay.sort.NEWEST];
@@ -45,7 +53,7 @@ var today = new Date();
 var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
 
 
-var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/input_data/categories(8)_all_titles_NO_SEP.csv';
+// var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/input_data/categories(8)_all_titles_NO_SEP.csv';
 // var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/all_app_titles/by_category/';
 
 var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details_';
@@ -62,6 +70,9 @@ var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_dat
  * Returns JSON array of basic app details from the first (or more) search result(s),
  * based on the app title search term.
  * @param {string} at - The title of the app being searched for.
+ * NOTE: currently the "fullDetail" option is not working for gplay.search() so
+ * that is why the getAppFullDetails -> gplay.app() function is needed.
+ * gplay.search() will get the appId, and use that in gplay.app() to get full details.
  */
 var getAppDetails = function getAppDetails(at) { // sample async action
     // console.log(at['title']);
@@ -72,7 +83,7 @@ var getAppDetails = function getAppDetails(at) { // sample async action
                 num: 1,
                 // fullDetail: true,
                 throttle: 3
-            })), 5000));
+            })), 2000));
     } catch (err) {
         console.log("Error inside getAppDetails" + err);
     }
@@ -88,7 +99,7 @@ var getAppFullDetails = function getAppFullDetails(aid) {
             gplay.app({
                 appId: aid,
                 throttle: 3
-            })), 5000));
+            })), 2000));
     } catch (err) {
         console.log("Error inside getAppFullDetails" + err);
     }
@@ -110,7 +121,7 @@ var getAppReviews = function getAppReviews(aid, num, appTitle) {
                 page: num,
                 sort: gplay.sort.NEWEST,
                 throttle: 3
-            }, appTitle)), 5000));
+            }, appTitle)), 2000));
     } catch (err) {
         console.log("Error inside getAppReviews" + err);
     }
@@ -149,54 +160,79 @@ function getRndInteger(min, max) {
 
 var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
     // console.log('test');
-    fs.readdir(directoryPath, function (err, files) {
-        // console.log('test');
-        if (err) {
-            return console.log('Unable to scan directory: ' + err);
-        }
+    var files = fs.readdirSync(directoryPath);
 
         files.forEach(function (file) {
             // console.log('test');
 
             try {
-                csvtojson()
+                csvtojsonV2()
                     .fromFile(directoryPath + file)
                     .then((titles) => {
                         console.log(titles);
+
                         try {
-                            // console.log('hey');
                             var pending_getAppDetails_promise = titles.map(getAppDetails);
-                            var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
-                            // console.log(titles);
-                            return resolved_getAppDetails_promise;
+
+
+                            // sleep.sleep(2);
+                            return pending_getAppDetails_promise;
                         } catch (err) {
-                            console.log("Error in getAppDetails: " + err);
+                            console.log("Error in pending_getAppDetails: " + err);
                         }
-                    }).then(function (appDetails) {
+                    }).then(function (pending_getAppDetails_promise) {
                         // console.log(appDetails);
                         // var num_titles = Object.keys(appDetails).length;
+                        var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
+                        return resolved_getAppDetails_promise;
+                    }).then(function(appDetails){
                         appDetails.forEach(app => {
                             // sleep.sleep(15);
                             try {
                                 getAppFullDetails(app[0].appId).then(function (fullDetails) {
-                                    // var collection;
-                                    // if (fullDetails.free == true) {
-                                    //     collection = 'FREE';
-                                    // } else {
-                                    //     collection = 'PAID';
-                                    // }
-                                    var apps_output_stream = fs.createWriteStream(app_details_output_path + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv', {
+                                    if (fullDetails.reviews < 100000) {
+                                        return;
+                                    }
+                                    var price_collection;
+                                    if (fullDetails.free == true) {
+                                        price_collection = 'FREE';
+                                    } else {
+                                        price_collection = 'PAID';
+                                    }
+                                    var app_genre;
+                                    if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
+                                        app_genre = 'ALL_GAMES';
+                                    } else {
+                                        app_genre = fullDetails.genreId;
+                                    }
+
+                                    var apps_output_stream = fs.createWriteStream(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv', {
                                         encoding: 'utf8',
                                         flags: 'a'
                                     });
-                                    var parsed_app_details = json2csvParserAppFullDetails.parse(fullDetails);
+                                    if (fs.existsSync(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv')) {
+
+                                    } else {
+                                        var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
+                                        apps_output_stream.write(parsed_detail_headers);
+                                        apps_output_stream.write('\n');
+                                    }
+                                    var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
                                     apps_output_stream.write(parsed_app_details);
+                                    apps_output_stream.write('\n');
                                     apps_output_stream.close();
                                     return fullDetails;
+
                                 }).then((fullDetails) => {
-                                    console.log(app[0]);
+                                    console.log(fullDetails.reviews);
+                                    var price_collection;
+                                    if (fullDetails.free == true) {
+                                        price_collection = 'FREE';
+                                    } else {
+                                        price_collection = 'PAID';
+                                    }
                                     // console.log(fullDetails);
-                                    for (var i = 0; i < 112; i++) {
+                                    for (var i = 0; i < 4; i++) {
                                         // if (i % 27 == 0) {
                                         //     var rand = getRndInteger(1, 8);
                                         //     console.log(i);
@@ -213,13 +249,20 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                                                     return false;
                                                 }
 
-                                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv', {
+                                                var app_genre;
+                                                if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
+                                                    app_genre = 'ALL_GAMES';
+                                                } else {
+                                                    app_genre = fullDetails.genreId;
+                                                }
+
+                                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
                                                     encoding: 'utf8',
                                                     flags: 'a'
                                                 });
 
                                                 // try {
-                                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + fullDetails.genreId + '_' + fullDetails.priceText + '_apps.csv')) {
+                                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
 
                                                 } else {
                                                     var parsed_headers = json2csvParserReviewsFirst.parse();
@@ -252,7 +295,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                 console.log("Error in main function: " + err);
             }
         });
-    });
+
 };
 
 getAppReviewsFromCSV();
