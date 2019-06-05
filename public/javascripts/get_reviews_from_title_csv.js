@@ -1,8 +1,8 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
 const path = require('path');
-// const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'all_app_titles', 'by_category', 'test/');
-const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'by_dictionary/');
+// const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
+const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
 console.log(directoryPath);
 // const csv = require('csv-parser');
 const Json2csvParser = require('json2csv').Parser;
@@ -31,7 +31,7 @@ const json2csvParserReviewsRest = new Json2csvParser(opts);
 
 var fields = ['title', 'installs', 'minInstalls', 'scoreText', 'ratings', 'reviews', 'price', 'free',
     'currency', 'priceText', 'offersIAP', 'size', 'androidVersion', 'androidVersionText', 'developer',
-    'genreId', 'familyGenreId', 'developerId','contentRating',
+    'genreId', 'familyGenreId', 'developerId', 'contentRating',
     'adSupported', 'released', 'updated', 'version', 'recentChanges', 'appId'
 ];
 
@@ -76,17 +76,15 @@ var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_dat
  */
 var getAppDetails = function getAppDetails(at) { // sample async action
     // console.log(at['title']);
-    try {
-        return new Promise(resolve => setTimeout(() => resolve(
-            gplay.search({
-                term: at.title,
-                num: 1,
-                // fullDetail: true,
-                throttle: 3
-            })), 2000));
-    } catch (err) {
-        console.log("Error inside getAppDetails" + err);
-    }
+    return new Promise(resolve => setTimeout(() => resolve(
+        gplay.search({
+            term: at.title,
+            num: 1,
+            // fullDetail: true,
+            throttle: 3
+        })), 10000)).catch(function () {
+        console.log("Error searching for app title");
+    });
 };
 
 /**
@@ -94,15 +92,14 @@ var getAppDetails = function getAppDetails(at) { // sample async action
  * @param {*} aid - The app id to search with.
  */
 var getAppFullDetails = function getAppFullDetails(aid) {
-    try {
-        return new Promise(resolve => setTimeout(() => resolve(
-            gplay.app({
-                appId: aid,
-                throttle: 3
-            })), 2000));
-    } catch (err) {
-        console.log("Error inside getAppFullDetails" + err);
-    }
+    return new Promise(resolve => setTimeout(() => resolve(
+        gplay.app({
+            appId: aid,
+            throttle: 3
+        })), 10000)).catch(function () {
+        console.log('The app id: ' + aid + ' is not returning any results.' +
+            'App id may have changed, or app has been removed');
+    });
 };
 
 /**
@@ -114,17 +111,15 @@ var getAppFullDetails = function getAppFullDetails(aid) {
  */
 var getAppReviews = function getAppReviews(aid, num, appTitle) {
     // console.log(at['title']);
-    try {
         return new Promise(resolve => setTimeout(() => resolve(
             gplay.reviews({
                 appId: aid,
                 page: num,
                 sort: gplay.sort.NEWEST,
                 throttle: 3
-            }, appTitle)), 2000));
-    } catch (err) {
-        console.log("Error inside getAppReviews" + err);
-    }
+            }, appTitle)), 10000)).catch(function(){
+        console.log("Error inside getAppReviews");
+    });
 };
 
 
@@ -162,139 +157,135 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
     // console.log('test');
     var files = fs.readdirSync(directoryPath);
 
-        files.forEach(function (file) {
-            // console.log('test');
+    files.forEach(function (file) {
+        // console.log('test');
+        csvtojsonV2()
+            .fromFile(directoryPath + file)
+            .then((titles) => {
+                console.log(titles);
 
-            try {
-                csvtojsonV2()
-                    .fromFile(directoryPath + file)
-                    .then((titles) => {
-                        console.log(titles);
+                // try {
+                var pending_getAppDetails_promise = titles.map(getAppDetails);
+
+
+                // sleep.sleep(2);
+                return pending_getAppDetails_promise;
+                // } catch (err) {
+                // console.log("Error in pending_getAppDetails: " + err);
+                // }
+            }).then(function (pending_getAppDetails_promise) {
+                // console.log(appDetails);
+                // var num_titles = Object.keys(appDetails).length;
+                var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
+                return resolved_getAppDetails_promise;
+            }).then(function (appDetails) {
+                // console.log(appDetails[0]);
+                appDetails.forEach(app => {
+                    // console.log(app[0].title);
+
+                    getAppFullDetails(app[0].appId).then(function (fullDetails) {
+
+                        // console.log(app[0].appId);
+                        if (fullDetails.reviews < 100000) {
+                            return;
+                        }
+                        var price_collection;
 
                         try {
-                            var pending_getAppDetails_promise = titles.map(getAppDetails);
-
-
-                            // sleep.sleep(2);
-                            return pending_getAppDetails_promise;
-                        } catch (err) {
-                            console.log("Error in pending_getAppDetails: " + err);
-                        }
-                    }).then(function (pending_getAppDetails_promise) {
-                        // console.log(appDetails);
-                        // var num_titles = Object.keys(appDetails).length;
-                        var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
-                        return resolved_getAppDetails_promise;
-                    }).then(function(appDetails){
-                        appDetails.forEach(app => {
-                            // sleep.sleep(15);
-                            try {
-                                getAppFullDetails(app[0].appId).then(function (fullDetails) {
-                                    if (fullDetails.reviews < 100000) {
-                                        return;
-                                    }
-                                    var price_collection;
-                                    if (fullDetails.free == true) {
-                                        price_collection = 'FREE';
-                                    } else {
-                                        price_collection = 'PAID';
-                                    }
-                                    var app_genre;
-                                    if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
-                                        app_genre = 'ALL_GAMES';
-                                    } else {
-                                        app_genre = fullDetails.genreId;
-                                    }
-
-                                    var apps_output_stream = fs.createWriteStream(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv', {
-                                        encoding: 'utf8',
-                                        flags: 'a'
-                                    });
-                                    if (fs.existsSync(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv')) {
-
-                                    } else {
-                                        var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
-                                        apps_output_stream.write(parsed_detail_headers);
-                                        apps_output_stream.write('\n');
-                                    }
-                                    var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
-                                    apps_output_stream.write(parsed_app_details);
-                                    apps_output_stream.write('\n');
-                                    apps_output_stream.close();
-                                    return fullDetails;
-
-                                }).then((fullDetails) => {
-                                    console.log(fullDetails.reviews);
-                                    var price_collection;
-                                    if (fullDetails.free == true) {
-                                        price_collection = 'FREE';
-                                    } else {
-                                        price_collection = 'PAID';
-                                    }
-                                    // console.log(fullDetails);
-                                    for (var i = 0; i < 4; i++) {
-                                        // if (i % 27 == 0) {
-                                        //     var rand = getRndInteger(1, 8);
-                                        //     console.log(i);
-                                        //     console.log("Sleeping for " + rand + " seconds.");
-                                        //     sleep.sleep(rand);
-                                        // }
-                                        // console.log(app[0] + '\n');
-                                        // sort_type.forEach(function (type) {
-                                        // console.log(app[0].appId +'\n'+app[0].title);
-                                        try {
-                                            getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
-                                                // console.log(app[0].appId +'\n'+app[0].titile);
-                                                if (review.length < 1 || review == undefined) {
-                                                    return false;
-                                                }
-
-                                                var app_genre;
-                                                if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
-                                                    app_genre = 'ALL_GAMES';
-                                                } else {
-                                                    app_genre = fullDetails.genreId;
-                                                }
-
-                                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
-                                                    encoding: 'utf8',
-                                                    flags: 'a'
-                                                });
-
-                                                // try {
-                                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
-
-                                                } else {
-                                                    var parsed_headers = json2csvParserReviewsFirst.parse();
-                                                    reviews_output_stream.write(parsed_headers);
-                                                    reviews_output_stream.write('\n');
-                                                }
-                                                // } catch (err) {
-
-                                                // }
-
-                                                var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
-                                                // console.log(parsed_app_reviews);
-                                                reviews_output_stream.write(parsed_app_reviews);
-                                                reviews_output_stream.write('\n');
-                                                reviews_output_stream.close();
-                                            });
-
-                                        } catch (err) {
-                                            console.log("Error in getAppReviews: " + err);
-                                        }
-                                        // });
-                                    }
-                                });
-                            } catch (err) {
-                                console.log("Error in getAppFullDetails: " + err);
+                            if (fullDetails.free == true) {
+                                price_collection = 'FREE';
+                            } else if (fullDetails.free == false) {
+                                price_collection = 'PAID';
                             }
+                        } catch (err) {
+                            console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
+                        }
+
+                        var app_genre;
+
+                        try {
+                            if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
+                                app_genre = 'ALL_GAMES';
+                            } else {
+                                app_genre = fullDetails.genreId;
+                            }
+                        } catch (err) {
+                            console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
+                        }
+
+                        var apps_output_stream = fs.createWriteStream(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv', {
+                            encoding: 'utf8',
+                            flags: 'a'
                         });
+                        if (fs.existsSync(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv')) {
+
+                        } else {
+                            var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
+                            apps_output_stream.write(parsed_detail_headers);
+                            apps_output_stream.write('\n');
+                        }
+                        var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
+                        apps_output_stream.write(parsed_app_details);
+                        apps_output_stream.write('\n');
+                        apps_output_stream.close();
+
+
+                        for (var i = 0; i < 112; i++) {
+
+                            if (i % 20 == 0) {
+                                var rand = getRndInteger(1, 4);
+                                // console.log("Review page: " + i);
+                                console.log("Sleeping for " + rand + " seconds.");
+                                sleep.sleep(rand);
+                            }
+                            // console.log(app[0] + '\n');
+                            // sort_type.forEach(function (type) {
+                            // console.log(app[0].appId +'\n'+app[0].title);
+
+                            getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
+                                // console.log(app[0].appId +'\n'+app[0].titile);
+                                if (review.length < 1 || review == undefined) {
+                                    return false;
+                                }
+
+                                var app_genre;
+                                if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
+                                    app_genre = 'ALL_GAMES';
+                                } else {
+                                    app_genre = fullDetails.genreId;
+                                }
+
+                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
+                                    encoding: 'utf8',
+                                    flags: 'a'
+                                });
+
+                                // try {
+                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
+
+                                } else {
+                                    var parsed_headers = json2csvParserReviewsFirst.parse();
+                                    reviews_output_stream.write(parsed_headers);
+                                    reviews_output_stream.write('\n');
+                                }
+                                // } catch (err) {
+
+                                // }
+
+                                var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
+                                // console.log(parsed_app_reviews);
+                                reviews_output_stream.write(parsed_app_reviews);
+                                reviews_output_stream.write('\n');
+                                reviews_output_stream.close();
+                            });
+                            // });
+                        }
+                    }).catch(function () {
+                        console.log("Error in getFullDetails");
                     });
-            } catch (err) {
-                console.log("Error in main function: " + err);
-            }
-        });
+                });
+            });
+    });
 
 };
 
