@@ -1,0 +1,70 @@
+#!/usr/bin/env node
+
+// DEPENDENCIES
+const command = require('commander');
+const chalk = require('chalk');
+const figlet = require('figlet');
+const version = require('./../package.json').version;
+const main = require('./../.');
+const { resolve } = require('path');
+const path = string => resolve(process.cwd(), string);
+const log = console.log;
+
+let start;
+let options = {};
+
+// CLI TOOL FUNCTIONALITY
+Promise.resolve()
+.then(() => {
+  command
+  .version(require('./../package.json').version)
+  .option('-I, --input [path]', 'Input .csv file path', path)
+  .option('-O, --output [path]', 'Output .csv file path', path)
+  .option('-S, --sort [column-name]', 'Name of column to sort by')
+  .option('-T, --sort-type [sort-type]', 'Type of value to sort by (takes \'number\', \'date\', \'boolean\', \'string\' (default))')
+  .option('-A, --ascending', 'Sort in ascending fashion (default)')
+  .option('-D, --descending', 'Sort in descending order')
+  .option('-R, --remove-duplicates', 'Remove duplicated rows')
+  .option('-Q, --silent', 'Silent mode')
+  .parse(process.argv);
+
+  // CHECK THE VALIDITY OF INPUT
+  if (!command.input) return Promise.reject(new Error('Command requires input file path.'));
+  if (!command.output) return Promise.reject(new Error('Command requires output file path.'));
+  if (command.input === command.output) return Promise.reject(new Error('Output path must be different from input path.'));
+  if (!command.sort) return Promise.reject(new Error('Column name must be given.'));
+  if (command.ascending && command.descending) return Promise.reject(new Error('Both ascending and descending are set.'));
+
+  options = {
+    input: command.input,
+    output: command.output,
+    sort: command.sort,
+    type: command.sortType || 'string',
+    descending: !!command.descending,
+    remove: command.removeDuplicates || true,
+    metadata: !command.silent
+  };
+
+  if (options.metadata) {
+    log(chalk.blue(figlet.textSync('csv-reorder')));
+    log(chalk.blue(`Version ${version}`), '\n');
+    log(chalk.blue('Column to sort by:'), options.sort);
+    log(chalk.blue('Sorting type:'), options.type);
+  }
+
+  start = new Date();
+
+  return main(options);
+})
+.then(meta => {
+  if (options.metadata) {
+    log(chalk.blue('Number of rows:'), meta.rows);
+    log(chalk.blue('Duplicate rows:'), meta.repeated);
+    log(chalk.blue('Removed rows:'), meta.removed);
+    log(chalk.blue('Time elapsed:'), `${new Date() - start}ms`);
+  }
+})
+.catch(error => {
+  if (error.code === 'ENOENT') error.message = 'Input file not found.';
+  log(chalk.bgRed('There was an error:'), error.message);
+});
