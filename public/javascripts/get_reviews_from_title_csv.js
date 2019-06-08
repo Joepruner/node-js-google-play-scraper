@@ -218,8 +218,8 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
 
                         for (var i = 0; i < 111; i++) {
 
-                            if (i % 10 == 0) {
-                                var rand = getRndInteger(3,8);
+                            if (i % 20 == 0) {
+                                var rand = getRndInteger(2,5);
                                 // console.log("Review page: " + i);
                                 console.log("Sleeping for " + rand + " seconds.");
                                 sleep.sleep(rand);

@@ -16,6 +16,7 @@
     "debug": "~2.6.9",
     "esm": "^3.2.25",
     "express": "~4.16.0",
+    "express-useragent": "^1.0.12",
     "fast-csv": "^2.5.0",
     "google-play-scraper": "^6.2.6",
     "http-errors": "~1.6.2",
