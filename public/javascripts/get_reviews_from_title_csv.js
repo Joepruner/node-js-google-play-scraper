@@ -10,6 +10,12 @@ const csvtojsonV2 = require('csvtojson/v2');
 const reorder = require('csv-reorder');
 const v8 = require('v8');
 
+var http = require('http');
+var https = require('https');
+
+http.globalAgent.maxSockets = 2;
+https.globalAgent.maxSockets = 2;
+
 const sleep = require('sleep');
 
 
@@ -79,7 +85,7 @@ var getAppDetails = (at) => ( // sample async action
         term: at.title,
         num: 1,
         // fullDetail: true,
-        throttle: 2
+        throttle: 1
     })
 );
 
@@ -90,7 +96,7 @@ var getAppDetails = (at) => ( // sample async action
 var getAppFullDetails = (aid) => (
     gplay.app({
         appId: aid,
-        throttle: 2
+        throttle: 1
     })
 );
 
@@ -106,7 +112,7 @@ var getAppReviews = (aid, num, appTitle) => (
         appId: aid,
         page: num,
         sort: gplay.sort.NEWEST,
-        throttle: 2
+        throttle: 1
     }, appTitle)
 );
 
@@ -218,8 +224,8 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
 
                         for (var i = 0; i < 111; i++) {
 
-                            if (i % 20 == 0) {
-                                var rand = getRndInteger(2,5);
+                            if (i % 5 == 0) {
+                                var rand = getRndInteger(2,8);
                                 // console.log("Review page: " + i);
                                 console.log("Sleeping for " + rand + " seconds.");
                                 sleep.sleep(rand);
