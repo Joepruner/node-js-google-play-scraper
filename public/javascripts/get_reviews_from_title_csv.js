@@ -74,33 +74,25 @@ var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_dat
  * that is why the getAppFullDetails -> gplay.app() function is needed.
  * gplay.search() will get the appId, and use that in gplay.app() to get full details.
  */
-var getAppDetails = function getAppDetails(at) { // sample async action
-    // console.log(at['title']);
-    return new Promise(resolve => setTimeout(() => resolve(
-        gplay.search({
-            term: at.title,
-            num: 1,
-            // fullDetail: true,
-            throttle: 3
-        })), 10000)).catch(function () {
-        console.log("Error searching for app title");
-    });
-};
+var getAppDetails = (at) => ( // sample async action
+    gplay.search({
+        term: at.title,
+        num: 1,
+        // fullDetail: true,
+        throttle: 2
+    })
+);
 
 /**
  *Retrieves the fully detailed app information.
  * @param {*} aid - The app id to search with.
  */
-var getAppFullDetails = function getAppFullDetails(aid) {
-    return new Promise(resolve => setTimeout(() => resolve(
-        gplay.app({
-            appId: aid,
-            throttle: 3
-        })), 10000)).catch(function () {
-        console.log('The app id: ' + aid + ' is not returning any results.' +
-            'App id may have changed, or app has been removed');
-    });
-};
+var getAppFullDetails = (aid) => (
+    gplay.app({
+        appId: aid,
+        throttle: 2
+    })
+);
 
 /**
  * Returns array of JSON for a single page of reviews for appId.
@@ -109,18 +101,14 @@ var getAppFullDetails = function getAppFullDetails(aid) {
  * @param {string} appTitle - Used to add an appTitle field to the JSON obj
  * returned from gplay.reviews. NOT used for searching for app.
  */
-var getAppReviews = function getAppReviews(aid, num, appTitle) {
-    // console.log(at['title']);
-        return new Promise(resolve => setTimeout(() => resolve(
-            gplay.reviews({
-                appId: aid,
-                page: num,
-                sort: gplay.sort.NEWEST,
-                throttle: 3
-            }, appTitle)), 10000)).catch(function(){
-        console.log("Error inside getAppReviews");
-    });
-};
+var getAppReviews = (aid, num, appTitle) => (
+    gplay.reviews({
+        appId: aid,
+        page: num,
+        sort: gplay.sort.NEWEST,
+        throttle: 2
+    }, appTitle)
+);
 
 
 
@@ -174,12 +162,10 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                 // console.log("Error in pending_getAppDetails: " + err);
                 // }
             }).then(function (pending_getAppDetails_promise) {
-                // console.log(appDetails);
-                // var num_titles = Object.keys(appDetails).length;
                 var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
                 return resolved_getAppDetails_promise;
             }).then(function (appDetails) {
-                // console.log(appDetails[0]);
+                // console.log(appDetails);
                 appDetails.forEach(app => {
                     // console.log(app[0].title);
 
@@ -230,10 +216,10 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                         apps_output_stream.close();
 
 
-                        for (var i = 0; i < 112; i++) {
+                        for (var i = 0; i < 111; i++) {
 
-                            if (i % 20 == 0) {
-                                var rand = getRndInteger(1, 4);
+                            if (i % 10 == 0) {
+                                var rand = getRndInteger(3,8);
                                 // console.log("Review page: " + i);
                                 console.log("Sleeping for " + rand + " seconds.");
                                 sleep.sleep(rand);
@@ -244,9 +230,11 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
 
                             getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
                                 // console.log(app[0].appId +'\n'+app[0].titile);
-                                if (review.length < 1 || review == undefined) {
-                                    return false;
-                                }
+                                // if (review == undefined || review.length < 1) {
+                                //     console.log("Error on review page " + i + " for app " + app[0].title +
+                                //     ". Probably reached end of review pages for this app.");
+                                //     return false;
+                                // }
 
                                 var app_genre;
                                 if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
@@ -280,9 +268,10 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
                             });
                             // });
                         }
-                    }).catch(function () {
-                        console.log("Error in getFullDetails");
-                    });
+                    })
+                    // .catch(function () {
+                    //     console.log("Error in getFullDetails");
+                    // });
                 });
             });
     });
