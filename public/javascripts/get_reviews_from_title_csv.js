@@ -213,12 +213,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     } catch (err) {
                         console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
                     }
-
-                    var apps_output_stream = fs.createWriteStream(app_details_output_path + file + app_genre + '_' + price_collection + '_apps.csv', {
+                    var file_name = JSON.stringify(file);
+                    var apps_output_stream = fs.createWriteStream(app_details_output_path + file_name.substring(1,file_name.length - 5) + "_" + app_genre + '_' + price_collection + '.csv', {
                         encoding: 'utf8',
                         flags: 'a'
                     });
-                    if (fs.existsSync(app_details_output_path + file + app_genre + '_' + price_collection + '_apps.csv')) {
+                    
+                    if (fs.existsSync(app_details_output_path + file_name.substring(1,file_name.length - 5) + "_" + app_genre + '_' + price_collection + '.csv')) {
 
                     } else {
                         var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
@@ -258,13 +259,15 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                                 app_genre = fullDetails.genreId;
                             }
 
-                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + file + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
+                            var file_name = JSON.stringify(file);
+
+                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + file_name.substring(file_name.length - 4) + 'NEWEST_' + app_genre + '_' + price_collection + '.csv', {
                                 encoding: 'utf8',
                                 flags: 'a'
                             });
 
                             // try {
-                            if (fs.existsSync(reviews_output_path + file + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
+                            if (fs.existsSync(reviews_output_path + file_name.substring(1,file_name.length - 5) + "_" + 'NEWEST_' + app_genre + '_' + price_collection + '.csv')) {
 
                             } else {
                                 var parsed_headers = json2csvParserReviewsFirst.parse();
