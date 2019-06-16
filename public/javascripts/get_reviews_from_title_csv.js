@@ -10,6 +10,12 @@ const csvtojsonV2 = require('csvtojson/v2');
 const reorder = require('csv-reorder');
 const v8 = require('v8');
 
+var http = require('http');
+var https = require('https');
+
+http.globalAgent.maxSockets = 1;
+https.globalAgent.maxSockets = 1;
+
 const sleep = require('sleep');
 
 
@@ -74,33 +80,29 @@ var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_dat
  * that is why the getAppFullDetails -> gplay.app() function is needed.
  * gplay.search() will get the appId, and use that in gplay.app() to get full details.
  */
-var getAppDetails = function getAppDetails(at) { // sample async action
-    // console.log(at['title']);
-    return new Promise(resolve => setTimeout(() => resolve(
-        gplay.search({
-            term: at.title,
-            num: 1,
-            // fullDetail: true,
-            throttle: 3
-        })), 10000)).catch(function () {
-        console.log("Error searching for app title");
-    });
-};
+var getAppDetails = (at) => ( // sample async action
+    gplay.search({
+        term: at.title,
+        num: 1,
+        // fullDetail: true,
+        throttle: 1
+    }).catch(function(err){
+        console.log("The app " + at + " is undefined. App may have changed or been removed. " + err);
+    })
+);
 
 /**
  *Retrieves the fully detailed app information.
  * @param {*} aid - The app id to search with.
  */
-var getAppFullDetails = function getAppFullDetails(aid) {
-    return new Promise(resolve => setTimeout(() => resolve(
-        gplay.app({
-            appId: aid,
-            throttle: 3
-        })), 10000)).catch(function () {
-        console.log('The app id: ' + aid + ' is not returning any results.' +
-            'App id may have changed, or app has been removed');
-    });
-};
+var getAppFullDetails = (aid) => (
+    gplay.app({
+        appId: aid,
+        throttle: 1
+    }).catch(function(err){
+        console.log("The app " + aid + " is undefined. App may have changed or been removed." + err);
+    })
+);
 
 /**
  * Returns array of JSON for a single page of reviews for appId.
@@ -109,18 +111,16 @@ var getAppFullDetails = function getAppFullDetails(aid) {
  * @param {string} appTitle - Used to add an appTitle field to the JSON obj
  * returned from gplay.reviews. NOT used for searching for app.
  */
-var getAppReviews = function getAppReviews(aid, num, appTitle) {
-    // console.log(at['title']);
-        return new Promise(resolve => setTimeout(() => resolve(
-            gplay.reviews({
-                appId: aid,
-                page: num,
-                sort: gplay.sort.NEWEST,
-                throttle: 3
-            }, appTitle)), 10000)).catch(function(){
-        console.log("Error inside getAppReviews");
-    });
-};
+var getAppReviews = (aid, num, appTitle) => (
+    gplay.reviews({
+        appId: aid,
+        page: num,
+        sort: gplay.sort.NEWEST,
+        throttle: 1
+    }, appTitle).catch(function(err){
+        console.log("Review error for app " + appTitle + " on page " + num+". " + err);
+    })
+);
 
 
 
@@ -153,143 +153,167 @@ function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var getAppReviewsFromCSV = function getAppReviewsFromCSV() {
+
+
+var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
     // console.log('test');
-    var files = fs.readdirSync(directoryPath);
 
-    files.forEach(function (file) {
-        // console.log('test');
-        csvtojsonV2()
-            .fromFile(directoryPath + file)
-            .then((titles) => {
-                console.log(titles);
+    console.log("Processing " + file);
 
-                // try {
-                var pending_getAppDetails_promise = titles.map(getAppDetails);
+    // setInterval(function () {
+    // console.log('test');
+    csvtojsonV2()
+        .fromFile(directoryPath + file)
+        .then((titles) => {
+            // console.log(titles);
+            // console.log("Getting basic app details...\n");
+
+            // try {
+            var pending_getAppDetails_promise = titles.map(getAppDetails);
 
 
-                // sleep.sleep(2);
-                return pending_getAppDetails_promise;
-                // } catch (err) {
-                // console.log("Error in pending_getAppDetails: " + err);
-                // }
-            }).then(function (pending_getAppDetails_promise) {
-                // console.log(appDetails);
-                // var num_titles = Object.keys(appDetails).length;
-                var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
-                return resolved_getAppDetails_promise;
-            }).then(function (appDetails) {
-                // console.log(appDetails[0]);
-                appDetails.forEach(app => {
-                    // console.log(app[0].title);
+            // sleep.sleep(2);
+            return pending_getAppDetails_promise;
+            // } catch (err) {
+            // console.log("Error in pending_getAppDetails: " + err);
+            // }
+        }).then(function (pending_getAppDetails_promise) {
+            var resolved_getAppDetails_promise = Promise.all(pending_getAppDetails_promise);
+            return resolved_getAppDetails_promise;
+        }).then(function (appDetails) {
+            // console.log(appDetails);
+            appDetails.forEach(app => {
+                // console.log(app[0].title);
 
-                    getAppFullDetails(app[0].appId).then(function (fullDetails) {
+                getAppFullDetails(app[0].appId).then(function (fullDetails) {
 
-                        // console.log(app[0].appId);
-                        if (fullDetails.reviews < 100000) {
-                            return;
+                    // console.log("Getting full app details for " + app[0].title + "...");
+
+                    // console.log(app[0].appId);
+                    var price_collection;
+
+                    try {
+                        if (fullDetails.free == true) {
+                            price_collection = 'FREE';
+                        } else if (fullDetails.free == false) {
+                            price_collection = 'PAID';
                         }
-                        var price_collection;
+                    } catch (err) {
+                        console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
+                    }
 
-                        try {
-                            if (fullDetails.free == true) {
-                                price_collection = 'FREE';
-                            } else if (fullDetails.free == false) {
-                                price_collection = 'PAID';
-                            }
-                        } catch (err) {
-                            console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
+                    var app_genre;
+
+                    try {
+                        if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
+                            app_genre = 'ALL_GAMES';
+                        } else {
+                            app_genre = fullDetails.genreId;
                         }
+                    } catch (err) {
+                        console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
+                    }
 
-                        var app_genre;
+                    var apps_output_stream = fs.createWriteStream(app_details_output_path + file + app_genre + '_' + price_collection + '_apps.csv', {
+                        encoding: 'utf8',
+                        flags: 'a'
+                    });
+                    if (fs.existsSync(app_details_output_path + file + app_genre + '_' + price_collection + '_apps.csv')) {
 
-                        try {
+                    } else {
+                        var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
+                        apps_output_stream.write(parsed_detail_headers);
+                        apps_output_stream.write('\n');
+                    }
+                    var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
+                    apps_output_stream.write(parsed_app_details);
+                    apps_output_stream.write('\n');
+                    apps_output_stream.close();
+
+                    // console.log("Getting reviews for " + app[0].title + " now.\n");
+                    for (var i = 0; i < 111; i++) {
+
+                        if (i % 15 == 0) {
+                            var rand = getRndInteger(4, 8);
+                            // console.log("Review page: " + i);
+                            // console.log("Sleeping for " + rand + " seconds.");
+                            sleep.sleep(rand);
+                        }
+                        // console.log(app[0] + '\n');
+                        // sort_type.forEach(function (type) {
+                        // console.log(app[0].appId +'\n'+app[0].title);
+
+                        getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
+                            // console.log(app[0].appId +'\n'+app[0].titile);
+                            // if (review == undefined || review.length < 1) {
+                            //     console.log("Error on review page " + i + " for app " + app[0].title +
+                            //     ". Probably reached end of review pages for this app.");
+                            //     return false;
+                            // }
+
+                            var app_genre;
                             if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
                                 app_genre = 'ALL_GAMES';
                             } else {
                                 app_genre = fullDetails.genreId;
                             }
-                        } catch (err) {
-                            console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
-                        }
 
-                        var apps_output_stream = fs.createWriteStream(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv', {
-                            encoding: 'utf8',
-                            flags: 'a'
-                        });
-                        if (fs.existsSync(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv')) {
-
-                        } else {
-                            var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
-                            apps_output_stream.write(parsed_detail_headers);
-                            apps_output_stream.write('\n');
-                        }
-                        var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
-                        apps_output_stream.write(parsed_app_details);
-                        apps_output_stream.write('\n');
-                        apps_output_stream.close();
-
-
-                        for (var i = 0; i < 112; i++) {
-
-                            if (i % 20 == 0) {
-                                var rand = getRndInteger(1, 4);
-                                // console.log("Review page: " + i);
-                                console.log("Sleeping for " + rand + " seconds.");
-                                sleep.sleep(rand);
-                            }
-                            // console.log(app[0] + '\n');
-                            // sort_type.forEach(function (type) {
-                            // console.log(app[0].appId +'\n'+app[0].title);
-
-                            getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
-                                // console.log(app[0].appId +'\n'+app[0].titile);
-                                if (review.length < 1 || review == undefined) {
-                                    return false;
-                                }
-
-                                var app_genre;
-                                if (JSON.stringify(fullDetails.genreId).includes('GAME') == true) {
-                                    app_genre = 'ALL_GAMES';
-                                } else {
-                                    app_genre = fullDetails.genreId;
-                                }
-
-                                var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
-                                    encoding: 'utf8',
-                                    flags: 'a'
-                                });
-
-                                // try {
-                                if (fs.existsSync(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
-
-                                } else {
-                                    var parsed_headers = json2csvParserReviewsFirst.parse();
-                                    reviews_output_stream.write(parsed_headers);
-                                    reviews_output_stream.write('\n');
-                                }
-                                // } catch (err) {
-
-                                // }
-
-                                var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
-                                // console.log(parsed_app_reviews);
-                                reviews_output_stream.write(parsed_app_reviews);
-                                reviews_output_stream.write('\n');
-                                reviews_output_stream.close();
+                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + file + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
+                                encoding: 'utf8',
+                                flags: 'a'
                             });
-                            // });
-                        }
-                    }).catch(function () {
-                        console.log("Error in getFullDetails");
-                    });
-                });
-            });
-    });
 
+                            // try {
+                            if (fs.existsSync(reviews_output_path + file + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
+
+                            } else {
+                                var parsed_headers = json2csvParserReviewsFirst.parse();
+                                reviews_output_stream.write(parsed_headers);
+                                reviews_output_stream.write('\n');
+                            }
+                            // } catch (err) {
+
+                            // }
+
+                            var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
+                            // console.log(parsed_app_reviews);
+                            reviews_output_stream.write(parsed_app_reviews);
+                            reviews_output_stream.write('\n');
+                            reviews_output_stream.close();
+                        });
+                        // });
+                    }
+                });
+                // .catch(function () {
+                //     console.log("Error in getFullDetails");
+                // });
+            });
+        });
 };
 
-getAppReviewsFromCSV();
+
+function stopInterval() {
+    clearInterval(appReviewInterval);
+    console.log("The interval has been cleared.");
+}
+
+var files = fs.readdirSync(directoryPath);
+first_file = files.pop();
+
+getAppReviewsFromCSV(first_file);
+
+var appReviewInterval = setInterval(function () {
+    console.log(files.length);
+    if (files.length < 1) {
+        console.log("All files in this directory have been processed.");
+        stopInterval();
+        return;
+    } else {
+        file = files.pop();
+        getAppReviewsFromCSV(file);
+    }
+}, 60000 * 10);
+
 
 
 // node --max-old-space-size=12288 get_reviews_from_title_csv.js
