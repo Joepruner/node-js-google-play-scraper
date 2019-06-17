@@ -1,6 +1,9 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
 const path = require('path');
+
+// var MongoClient = require('mongodb').MongoClient;
+
 // const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
 const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
 console.log(directoryPath);
@@ -23,7 +26,7 @@ const opts = {
     'header': false
 };
 
-var fields = ['appTitle', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
+var fields = ['appTitle', 'appGenre', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
 const json2csvParserReviewsFirst = new Json2csvParser({
     fields
 });
@@ -62,12 +65,12 @@ var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getD
 // var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/input_data/categories(8)_all_titles_NO_SEP.csv';
 // var titles_input_path = '/home/joepruner/Projects/GooglePlayScraper/all_app_titles/by_category/';
 
-var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details_';
+var app_details_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
 // var external_apps_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/worst_power_consumption_apps/' + date + '_all_details_worst_';
 // var all_titles_from_dictionary_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/all_app_titles/' + date + '_all_app_titles_';
 
 // var external_reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/' + date + '_newest_reveiws_TOP_FREE_';
-var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews_';
+var reviews_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews_';
 
 
 
@@ -107,13 +110,13 @@ var getAppFullDetails = (aid) => (
  * @param {string} appTitle - Used to add an appTitle field to the JSON obj
  * returned from gplay.reviews. NOT used for searching for app.
  */
-var getAppReviews = (aid, num, appTitle) => (
+var getAppReviews = (aid, num, appTitle, appGenre) => (
     gplay.reviews({
         appId: aid,
         page: num,
         sort: gplay.sort.NEWEST,
         throttle: 1
-    }, appTitle)
+    }, appTitle, appGenre)
 );
 
 
@@ -184,10 +187,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     console.log("Getting full app details for " + app[0].title + "...");
 
                     // console.log(app[0].appId);
-                    if (fullDetails.reviews < 10000) {
-                        console.log("App " + app[0].title + " has less than 10,000 reviews. Rejecting.");
-                        return;
-                    }
+            
                     var price_collection;
 
                     try {
@@ -212,11 +212,11 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                         console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
                     }
 
-                    var apps_output_stream = fs.createWriteStream(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv', {
+                    var apps_output_stream = fs.createWriteStream(app_details_output_path + '_' + price_collection + '_apps.csv', {
                         encoding: 'utf8',
                         flags: 'a'
                     });
-                    if (fs.existsSync(app_details_output_path + app_genre + '_' + price_collection + '_apps.csv')) {
+                    if (fs.existsSync(app_details_output_path + '_' + price_collection + '_apps.csv')) {
 
                     } else {
                         var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
@@ -229,7 +229,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     apps_output_stream.close();
 
                     console.log("Getting reviews for " + app[0].title + " now.\n");
-                    for (var i = 0; i < 111; i++) {
+                    for (var i = 0; i < 3; i++) {
 
                         if (i % 15 == 0) {
                             var rand = getRndInteger(4, 8);
@@ -241,7 +241,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                         // sort_type.forEach(function (type) {
                         // console.log(app[0].appId +'\n'+app[0].title);
 
-                        getAppReviews(app[0].appId, i, app[0].title).then(function (review) {
+                        getAppReviews(app[0].appId, i, app[0].title, fullDetails.genreId).then(function (review) {
                             // console.log(app[0].appId +'\n'+app[0].titile);
                             // if (review == undefined || review.length < 1) {
                             //     console.log("Error on review page " + i + " for app " + app[0].title +
@@ -256,13 +256,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                                 app_genre = fullDetails.genreId;
                             }
 
-                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv', {
+                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + price_collection + '_apps.csv', {
                                 encoding: 'utf8',
                                 flags: 'a'
                             });
 
                             // try {
-                            if (fs.existsSync(reviews_output_path + 'NEWEST_' + app_genre + '_' + price_collection + '_apps.csv')) {
+                            if (fs.existsSync(reviews_output_path + 'NEWEST_'  + price_collection + '_apps.csv')) {
 
                             } else {
                                 var parsed_headers = json2csvParserReviewsFirst.parse();
