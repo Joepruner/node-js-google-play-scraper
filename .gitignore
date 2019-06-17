@@ -35,11 +35,7 @@ build/Release
 # Dependency directories
 #node_modules/
 #jspm_packages/
-<<<<<<< HEAD
-/node_modules/node-gyp/
-=======
 node_modules/node-gyp/
->>>>>>> develop
 
 # Typescript v1 declaration files
 typings/
