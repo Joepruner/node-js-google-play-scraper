@@ -47,8 +47,8 @@ var today = new Date();
 
 var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
 
-var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
-var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
+var app_details_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
+var reviews_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
 
 /**
  * Returns JSON array of basic app details from the first (or more) search result(s),
@@ -104,7 +104,7 @@ function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
+var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
     console.log("Processing " + file);
 
     csvtojsonV2()
@@ -153,6 +153,11 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                         apps_output_stream.write(parsed_detail_headers);
                         apps_output_stream.write('\n');
                     }
+
+                    dbo.collection("app_details").insertOne(fullDetails, function (err, res) {
+                        if (err) throw err;
+                    });
+
                     var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
                     apps_output_stream.write(parsed_app_details);
                     apps_output_stream.write('\n');
@@ -192,6 +197,12 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                                 reviews_output_stream.write(parsed_headers);
                                 reviews_output_stream.write('\n');
                             }
+
+
+                            dbo.collection("app_reviews").insertOne(review[0], function (err, res) {
+                                if (err) throw err;
+                            });
+
                             var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
                             reviews_output_stream.write(parsed_app_reviews);
                             reviews_output_stream.write('\n');
@@ -203,27 +214,31 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         });
 };
 
-function stopInterval() {
-    clearInterval(appReviewInterval);
-    console.log("The interval has been cleared.");
-}
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://localhost:27017/";
 
 var files = fs.readdirSync(directoryPath);
 console.log(files.length + " app title files remaining to be scraped");
 first_file = files.pop();
-getAppReviewsFromCSV(first_file);
 
-// var appReviewInterval = setInterval(function () {
-process.on("beforeExit", function () {
-    console.log(files.length + " app title files remaining to be scraped");
-    if (files.length < 1) {
-        console.log("All files in this directory have been processed");
-        console.log("Gracefully shutting down scraper process");
-        // stopInterval();
-        return;
-    } else {
-        file = files.pop();
-        getAppReviewsFromCSV(file);
-    }
+MongoClient.connect(url,{ useNewUrlParser: true }, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("app_data");
+
+    // console.log("1 document inserted");
+
+    getAppReviewsFromCSV(first_file, dbo);
+
+    process.on("beforeExit", function () {
+        console.log(files.length + " app title files remaining to be scraped");
+        if (files.length < 1) {
+            console.log("All files in this directory have been processed\n");
+            console.log("Gracefully shutting down scraper process and database");
+            db.close();
+            return;
+        } else {
+            file = files.pop();
+            getAppReviewsFromCSV(file);
+        }
+    });
 });
-// }, 60000 * 20);
