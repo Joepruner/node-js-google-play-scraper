@@ -48,7 +48,7 @@ var today = new Date();
 var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
 
 var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
-var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews_';
+var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
 
 /**
  * Returns JSON array of basic app details from the first (or more) search result(s),
@@ -157,7 +157,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     apps_output_stream.write(parsed_app_details);
                     apps_output_stream.write('\n');
                     apps_output_stream.close();
-                    for (var i = 0; i < 111; i++) {
+                    for (var i = 0; i < 15; i++) {
 
                         if (i % 15 == 0) {
                             var rand = getRndInteger(1, 3);
@@ -165,11 +165,11 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                         }
 
                         getAppReviews(app[0].appId, i, app[0].title, fullDetails.genreId).then(function (review) {
-                            if (review == undefined || review.length < 1) {
-                                console.log("Error on review page " + i + " for app " + app[0].title +
-                                    ". Probably reached end of review pages for this app.");
-                                return;
-                            }
+                            // if (review == undefined || review.length < 1) {
+                            //     console.log("Error on review page " + i + " for app " + app[0].title +
+                            //         ". Probably reached end of review pages for this app.");
+                            //     return;
+                            // }
 
                             var file_name = JSON.stringify(file);
                             var scrape_set = '';
@@ -209,18 +209,21 @@ function stopInterval() {
 }
 
 var files = fs.readdirSync(directoryPath);
-first_file = files.pop();
 console.log(files.length + " app title files remaining to be scraped");
+first_file = files.pop();
 getAppReviewsFromCSV(first_file);
 
-var appReviewInterval = setInterval(function () {
+// var appReviewInterval = setInterval(function () {
+process.on("beforeExit", function () {
     console.log(files.length + " app title files remaining to be scraped");
     if (files.length < 1) {
         console.log("All files in this directory have been processed");
-        stopInterval();
+        console.log("Gracefully shutting down scraper process");
+        // stopInterval();
         return;
     } else {
         file = files.pop();
         getAppReviewsFromCSV(file);
     }
-}, 60000 * 20);
+});
+// }, 60000 * 20);
