@@ -89,6 +89,8 @@ var getAppDetails = (at) => ( // sample async action
         num: 1,
         // fullDetail: true,
         throttle: 1
+    }).catch(function(err){
+        console.log("The app " + at + " is undefined. App may have changed or been removed. " + err);
     })
 );
 
@@ -100,6 +102,8 @@ var getAppFullDetails = (aid) => (
     gplay.app({
         appId: aid,
         throttle: 1
+    }).catch(function(err){
+        console.log("The app " + aid + " is undefined. App may have changed or been removed." + err);
     })
 );
 
@@ -116,7 +120,9 @@ var getAppReviews = (aid, num, appTitle, appGenre) => (
         page: num,
         sort: gplay.sort.NEWEST,
         throttle: 1
-    }, appTitle, appGenre)
+    }, appTitle, appGenre).catch(function(err){
+        console.log("Review error for app " + appTitle + " on page " + num+". " + err);
+    })
 );
 
 
@@ -163,7 +169,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         .fromFile(directoryPath + file)
         .then((titles) => {
             // console.log(titles);
-            console.log("Getting basic app details...\n");
+            // console.log("Getting basic app details...\n");
 
             // try {
             var pending_getAppDetails_promise = titles.map(getAppDetails);
@@ -180,14 +186,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         }).then(function (appDetails) {
             // console.log(appDetails);
             appDetails.forEach(app => {
-                console.log(app[0].title);
+                // console.log(app[0].title);
 
                 getAppFullDetails(app[0].appId).then(function (fullDetails) {
 
-                    console.log("Getting full app details for " + app[0].title + "...");
+                    // console.log("Getting full app details for " + app[0].title + "...");
 
                     // console.log(app[0].appId);
-            
                     var price_collection;
 
                     try {
@@ -211,12 +216,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     } catch (err) {
                         console.log('Error getting fullDetails.genreId for ' + app[0].title + " : " + err);
                     }
-
-                    var apps_output_stream = fs.createWriteStream(app_details_output_path + '_' + price_collection + '_apps.csv', {
+                    var file_name = JSON.stringify(file);
+                    var apps_output_stream = fs.createWriteStream(app_details_output_path + file_name.substring(1,file_name.length - 5) + "_" + app_genre + '_' + price_collection + '.csv', {
                         encoding: 'utf8',
                         flags: 'a'
                     });
-                    if (fs.existsSync(app_details_output_path + '_' + price_collection + '_apps.csv')) {
+                    
+                    if (fs.existsSync(app_details_output_path + file_name.substring(1,file_name.length - 5) + "_" + app_genre + '_' + price_collection + '.csv')) {
 
                     } else {
                         var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
@@ -228,8 +234,8 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     apps_output_stream.write('\n');
                     apps_output_stream.close();
 
-                    console.log("Getting reviews for " + app[0].title + " now.\n");
-                    for (var i = 0; i < 3; i++) {
+                    // console.log("Getting reviews for " + app[0].title + " now.\n");
+                    for (var i = 0; i < 111; i++) {
 
                         if (i % 15 == 0) {
                             var rand = getRndInteger(4, 8);
@@ -256,13 +262,15 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                                 app_genre = fullDetails.genreId;
                             }
 
-                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + 'NEWEST_' + price_collection + '_apps.csv', {
+                            var file_name = JSON.stringify(file);
+
+                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + file_name.substring(file_name.length - 5) + 'NEWEST_' + app_genre + '_' + price_collection + '.csv', {
                                 encoding: 'utf8',
                                 flags: 'a'
                             });
 
                             // try {
-                            if (fs.existsSync(reviews_output_path + 'NEWEST_'  + price_collection + '_apps.csv')) {
+                            if (fs.existsSync(reviews_output_path + file_name.substring(1,file_name.length - 5) + "_" + 'NEWEST_' + app_genre + '_' + price_collection + '.csv')) {
 
                             } else {
                                 var parsed_headers = json2csvParserReviewsFirst.parse();
@@ -292,6 +300,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
 
 function stopInterval() {
     clearInterval(appReviewInterval);
+    console.log("The interval has been cleared.");
 }
 
 var files = fs.readdirSync(directoryPath);
@@ -300,7 +309,8 @@ first_file = files.pop();
 getAppReviewsFromCSV(first_file);
 
 var appReviewInterval = setInterval(function () {
-    if (files.length == 0) {
+    console.log(files.length);
+    if (files.length < 1) {
         console.log("All files in this directory have been processed.");
         stopInterval();
         return;
@@ -308,7 +318,7 @@ var appReviewInterval = setInterval(function () {
         file = files.pop();
         getAppReviewsFromCSV(file);
     }
-}, 60000 * 30);
+}, 60000 * 10);
 
 
 
