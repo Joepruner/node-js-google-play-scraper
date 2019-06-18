@@ -1,12 +1,13 @@
 const gplay = require('google-play-scraper');
 const fs = require('fs');
+const md5 = require('md5');
 const path = require('path');
 const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
 
 const Json2csvParser = require('json2csv').Parser;
 const csvtojsonV2 = require('csvtojson/v2');
-const reorder = require('csv-reorder');
-const v8 = require('v8');
+// const reorder = require('csv-reorder');
+// const v8 = require('v8');
 
 var http = require('http');
 var https = require('https');
@@ -28,7 +29,7 @@ const json2csvParserReviewsRest = new Json2csvParser(opts);
 
 var fields = ['title', 'installs', 'minInstalls', 'scoreText', 'ratings', 'reviews', 'price', 'free',
     'currency', 'priceText', 'offersIAP', 'size', 'androidVersion', 'androidVersionText', 'developer',
-    'genreId', 'familyGenreId', 'developerId', 'contentRating',
+    'developerId', 'genreId', 'familyGenreId', 'contentRating',
     'adSupported', 'released', 'updated', 'version', 'recentChanges', 'appId'
 ];
 
@@ -47,8 +48,8 @@ var today = new Date();
 
 var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
 
-var app_details_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
-var reviews_output_path = '/home/joepruner/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
+var app_details_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
+var reviews_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
 
 /**
  * Returns JSON array of basic app details from the first (or more) search result(s),
@@ -104,7 +105,7 @@ function getRndInteger(min, max) {
     return Math.floor(Math.random() * (max - min)) + min;
 }
 
-var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
+var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
     console.log("Processing " + file);
 
     csvtojsonV2()
@@ -120,43 +121,54 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         }).then(function (appDetails) {
             appDetails.forEach(app => {
                 getAppFullDetails(app[0].appId).then(function (fullDetails) {
-                    var price_collection;
+                    // var price_collection;
 
-                    try {
-                        if (fullDetails.free == true) {
-                            price_collection = 'FREE';
-                        } else if (fullDetails.free == false) {
-                            price_collection = 'PAID';
-                        }
-                    } catch (err) {
-                        console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
-                    }
-                    var file_name = JSON.stringify(file);
-                    var scrape_set = '';
+                    // try {
+                    //     if (fullDetails.free == true) {
+                    //         price_collection = 'FREE';
+                    //     } else if (fullDetails.free == false) {
+                    //         price_collection = 'PAID';
+                    //     }
+                    // } catch (err) {
+                    //     console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
+                    // }
+                    // var file_name = JSON.stringify(file);
+                    // var scrape_set = '';
 
-                    if (file_name.includes('category') && file_name.includes('topselling')) {
-                        scrape_set = '_category_topselling';
-                    } else {
-                        scrape_set = '_scrape_set_unknown';
-                    }
+                    // if (file_name.includes('category') && file_name.includes('topselling')) {
+                    //     scrape_set = '_category_topselling';
+                    // } else {
+                    //     scrape_set = '_scrape_set_unknown';
+                    // }
 
-                    var file_name = JSON.stringify(file);
-                    var apps_output_stream = fs.createWriteStream(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
-                        encoding: 'utf8',
-                        flags: 'a'
+                    // var file_name = JSON.stringify(file);
+                    // var apps_output_stream = fs.createWriteStream(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
+                    //     encoding: 'utf8',
+                    //     flags: 'a'
+                    // });
+
+                    // if (fs.existsSync(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
+
+                    // } else {
+                    //     var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
+                    //     apps_output_stream.write(parsed_detail_headers);
+                    //     apps_output_stream.write('\n');
+                    // }
+
+                    fullDetails.appId = app[0].appId;
+
+                    // var hash = md5(fullDetails.appId + fullDetails.updated);
+                    // fullDetails.hash = hash;
+
+                    dbo.collection("app_details").insertOne(fullDetails, function (err, res) {
+                        if (err) throw err;
                     });
 
-                    if (fs.existsSync(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
+                    // var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
+                    // apps_output_stream.write(parsed_app_details);
+                    // apps_output_stream.write('\n');
+                    // apps_output_stream.close();
 
-                    } else {
-                        var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
-                        apps_output_stream.write(parsed_detail_headers);
-                        apps_output_stream.write('\n');
-                    }
-                    var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
-                    apps_output_stream.write(parsed_app_details);
-                    apps_output_stream.write('\n');
-                    apps_output_stream.close();
                     for (var i = 0; i < 15; i++) {
 
                         if (i % 15 == 0) {
@@ -171,31 +183,44 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                             //     return;
                             // }
 
-                            var file_name = JSON.stringify(file);
-                            var scrape_set = '';
+                            // var file_name = JSON.stringify(file);
+                            // var scrape_set = '';
 
-                            if (file_name.includes('category') && file_name.includes('topselling')) {
-                                scrape_set = '_category_topselling';
-                            } else {
-                                scrape_set = '_scrape_set_unknown';
-                            }
+                            // if (file_name.includes('category') && file_name.includes('topselling')) {
+                            //     scrape_set = '_category_topselling';
+                            // } else {
+                            //     scrape_set = '_scrape_set_unknown';
+                            // }
 
-                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
-                                encoding: 'utf8',
-                                flags: 'a'
+                            // var reviews_output_stream = fs.createWriteStream(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
+                            //     encoding: 'utf8',
+                            //     flags: 'a'
+                            // });
+
+                            // if (fs.existsSync(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
+
+                            // } else {
+                            //     var parsed_headers = json2csvParserReviewsFirst.parse();
+                            //     reviews_output_stream.write(parsed_headers);
+                            //     reviews_output_stream.write('\n');
+                            // }
+                            // console.log(review + '\n')
+                            // console.log(review[0]);
+
+                            // review[0].appId = app[0].appId;
+
+                            // var hash = md5(review[0].appId + review[0].userName + review[0].text);
+                            // review[0].hash = hash;
+                            
+
+                            dbo.collection("app_reviews").insertOne(review[0], function (err, res) {
+                                if (err) throw err;
                             });
 
-                            if (fs.existsSync(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
-
-                            } else {
-                                var parsed_headers = json2csvParserReviewsFirst.parse();
-                                reviews_output_stream.write(parsed_headers);
-                                reviews_output_stream.write('\n');
-                            }
-                            var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
-                            reviews_output_stream.write(parsed_app_reviews);
-                            reviews_output_stream.write('\n');
-                            reviews_output_stream.close();
+                            // var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
+                            // reviews_output_stream.write(parsed_app_reviews);
+                            // reviews_output_stream.write('\n');
+                            // reviews_output_stream.close();
                         });
                     }
                 });
@@ -203,27 +228,33 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         });
 };
 
-function stopInterval() {
-    clearInterval(appReviewInterval);
-    console.log("The interval has been cleared.");
-}
+var MongoClient = require('mongodb').MongoClient;
+var url = "mongodb://localhost:27017/";
 
 var files = fs.readdirSync(directoryPath);
 console.log(files.length + " app title files remaining to be scraped");
 first_file = files.pop();
-getAppReviewsFromCSV(first_file);
 
-// var appReviewInterval = setInterval(function () {
-process.on("beforeExit", function () {
-    console.log(files.length + " app title files remaining to be scraped");
-    if (files.length < 1) {
-        console.log("All files in this directory have been processed");
-        console.log("Gracefully shutting down scraper process");
-        // stopInterval();
-        return;
-    } else {
-        file = files.pop();
-        getAppReviewsFromCSV(file);
-    }
+MongoClient.connect(url, {
+    useNewUrlParser: true
+}, function (err, db) {
+    if (err) throw err;
+    var dbo = db.db("app_data");
+
+    // console.log("1 document inserted");
+
+    getAppReviewsFromCSV(first_file, dbo);
+
+    process.on("beforeExit", function () {
+        console.log(files.length + " app title files remaining to be scraped");
+        if (files.length < 1) {
+            console.log("All files in this directory have been processed\n");
+            console.log("Gracefully shutting down scraper process and database");
+            db.close();
+            return;
+        } else {
+            file = files.pop();
+            getAppReviewsFromCSV(file);
+        }
+    });
 });
-// }, 60000 * 20);
