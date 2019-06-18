@@ -207,7 +207,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                             // console.log(review + '\n')
                             // console.log(review[0]);
 
-                            review[0].appId = app[0].appId;
+                            // review[0].appId = app[0].appId;
 
                             // var hash = md5(review[0].appId + review[0].userName + review[0].text);
                             // review[0].hash = hash;
