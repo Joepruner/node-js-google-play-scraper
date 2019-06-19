@@ -2,7 +2,10 @@ const gplay = require('google-play-scraper');
 const fs = require('fs');
 const md5 = require('md5');
 const path = require('path');
-const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'app_titles', 'test/');
+const directoryPath = path.join(__dirname, '..', '..', 'input_data', 'pre_processing_apps/');
+
+const _cliProgress = require('cli-progress');
+const bar1 = new _cliProgress.Bar({}, _cliProgress.Presets.shades_classic);
 
 const Json2csvParser = require('json2csv').Parser;
 const csvtojsonV2 = require('csvtojson/v2');
@@ -21,7 +24,7 @@ const opts = {
     'header': false
 };
 
-var fields = ['appTitle', 'appGenre', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
+var fields = ['appTitle', 'appId', 'appGenre', 'userName', 'date', 'score', 'reviewTitle', 'text', 'replyDate', 'replyText'];
 const json2csvParserReviewsFirst = new Json2csvParser({
     fields
 });
@@ -48,8 +51,8 @@ var today = new Date();
 
 var date = today.getFullYear() + '-' + (today.getMonth() + 1) + '-' + today.getDate();
 
-var app_details_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_app_details';
-var reviews_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/test_output/' + date + '_reviews';
+var app_details_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/pre_processing_apps/' + date + '_app_details';
+var reviews_output_path = '/home/joseph/Projects/GooglePlayScraper/output_data/pre_processing_apps/' + date + '_reviews';
 
 /**
  * Returns JSON array of basic app details from the first (or more) search result(s),
@@ -90,13 +93,13 @@ var getAppFullDetails = (aid) => (
  * @param {string} appTitle - Used to add an appTitle field to the JSON obj
  * returned from gplay.reviews. NOT used for searching for app.
  */
-var getAppReviews = (aid, num, appTitle, appGenre) => (
+var getAppReviews = (aid, num, appTitle, appGenre, scrape_set) => (
     gplay.reviews({
         appId: aid,
         page: num,
         sort: gplay.sort.NEWEST,
         throttle: 1
-    }, appTitle, appGenre).catch(function (err) {
+    }, appTitle, aid, appGenre, scrape_set).catch(function (err) {
         console.log("Review error for app " + appTitle + " on page " + num + ". " + err);
     })
 );
@@ -121,17 +124,17 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
         }).then(function (appDetails) {
             appDetails.forEach(app => {
                 getAppFullDetails(app[0].appId).then(function (fullDetails) {
-                    // var price_collection;
+                    var price_collection;
 
-                    // try {
-                    //     if (fullDetails.free == true) {
-                    //         price_collection = 'FREE';
-                    //     } else if (fullDetails.free == false) {
-                    //         price_collection = 'PAID';
-                    //     }
-                    // } catch (err) {
-                    //     console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
-                    // }
+                    try {
+                        if (fullDetails.free == true) {
+                            price_collection = 'FREE';
+                        } else if (fullDetails.free == false) {
+                            price_collection = 'PAID';
+                        }
+                    } catch (err) {
+                        console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
+                    }
                     var file_name = JSON.stringify(file);
                     var scrape_set = '';
 
@@ -143,19 +146,19 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                         scrape_set = '_scrape_set_unknown';
                     }
 
-                    // var file_name = JSON.stringify(file);
-                    // var apps_output_stream = fs.createWriteStream(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
-                    //     encoding: 'utf8',
-                    //     flags: 'a'
-                    // });
+                    var file_name = JSON.stringify(file);
+                    var apps_output_stream = fs.createWriteStream(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
+                        encoding: 'utf8',
+                        flags: 'a'
+                    });
 
-                    // if (fs.existsSync(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
+                    if (fs.existsSync(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
 
-                    // } else {
-                    //     var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
-                    //     apps_output_stream.write(parsed_detail_headers);
-                    //     apps_output_stream.write('\n');
-                    // }
+                    } else {
+                        var parsed_detail_headers = json2csvParserAppFullDetailsFirst.parse();
+                        apps_output_stream.write(parsed_detail_headers);
+                        apps_output_stream.write('\n');
+                    }
 
                     fullDetails.scrape_set = scrape_set;
                     fullDetails.appId = app[0].appId;
@@ -167,24 +170,16 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                         if (err) throw err;
                     });
 
-                    // var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
-                    // apps_output_stream.write(parsed_app_details);
-                    // apps_output_stream.write('\n');
-                    // apps_output_stream.close();
+                    var parsed_app_details = json2csvParserAppFullDetailsRest.parse(fullDetails);
+                    apps_output_stream.write(parsed_app_details);
+                    apps_output_stream.write('\n');
+                    apps_output_stream.close();
 
-                    for (var i = 0; i < 15; i++) {
+                    for (var i = 0; i < 1; i++) {
 
                         if (i % 15 == 0) {
                             var rand = getRndInteger(1, 3);
                             sleep.sleep(rand);
-                        }
-
-                        getAppReviews(app[0].appId, i, app[0].title, fullDetails.genreId).then(function (review) {
-                            // if (review == undefined || review.length < 1) {
-                            //     console.log("Error on review page " + i + " for app " + app[0].title +
-                            //         ". Probably reached end of review pages for this app.");
-                            //     return;
-                            // }
 
                             var file_name = JSON.stringify(file);
                             var scrape_set = '';
@@ -196,48 +191,56 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                             } else {
                                 scrape_set = '_scrape_set_unknown';
                             }
+                        }
 
-                            // var reviews_output_stream = fs.createWriteStream(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
-                            //     encoding: 'utf8',
-                            //     flags: 'a'
-                            // });
-
-                            // if (fs.existsSync(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
-
-                            // } else {
-                            //     var parsed_headers = json2csvParserReviewsFirst.parse();
-                            //     reviews_output_stream.write(parsed_headers);
-                            //     reviews_output_stream.write('\n');
+                        getAppReviews(app[0].appId, i, app[0].title, fullDetails.genreId, scrape_set).then(function (reviews) {
+                            // if (review == undefined || review.length < 1) {
+                            //     console.log("Error on review page " + i + " for app " + app[0].title +
+                            //         ". Probably reached end of review pages for this app.");
+                            //     return;
                             // }
-                            // console.log(review + '\n')
-                            // console.log(review[0]);
 
-                            try {
-                                review[0].appId = app[0].appId;
-                            }
-                            catch(err){
-                            }
-                            review[0].scrape_set = scrape_set;
-                            
+                            /** DATABASE insertion of reviews
+                             * @rev individual review from the array "reviews"
+                             ******************************************************************************/
+                            reviews.forEach(function (review) {
+                                var hash = md5(review.appId + review.userName + review.text);
+                                review.hash = hash;
+                                dbo.collection("app_reviews").insertOne(review, function (err, res) {
+                                    if (err) throw err;
+                                });
+                            })
 
-                            var hash = md5(review[0].appId + review[0].userName + review[0].text);
-                            review[0].hash = hash;
+                            /**
+                             * .CSV output of reviews
+                             ****************************************************************************/
 
-
-                            dbo.collection("app_reviews").insertOne(review[0], function (err, res) {
-                                if (err) throw err;
+                            var reviews_output_stream = fs.createWriteStream(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
+                                encoding: 'utf8',
+                                flags: 'a'
                             });
 
-                            // var parsed_app_reviews = json2csvParserReviewsRest.parse(review);
-                            // reviews_output_stream.write(parsed_app_reviews);
-                            // reviews_output_stream.write('\n');
-                            // reviews_output_stream.close();
+                            if (fs.existsSync(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv')) {
+
+                            } else {
+                                var parsed_headers = json2csvParserReviewsFirst.parse();
+                                reviews_output_stream.write(parsed_headers);
+                                reviews_output_stream.write('\n');
+                            }
+
+                            var parsed_app_reviews = json2csvParserReviewsRest.parse(reviews);
+                            reviews_output_stream.write(parsed_app_reviews);
+                            reviews_output_stream.write('\n');
+                            reviews_output_stream.close();
                         });
                     }
                 });
             });
         });
 };
+
+
+/*******MAIN************************************************* */
 
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/";
@@ -252,8 +255,6 @@ MongoClient.connect(url, {
     if (err) throw err;
     var dbo = db.db("app_data");
 
-    // console.log("1 document inserted");
-
     getAppReviewsFromCSV(first_file, dbo);
 
     process.on("beforeExit", function () {
@@ -264,6 +265,7 @@ MongoClient.connect(url, {
             db.close();
             return;
         } else {
+            console.log("Next file...\n")
             file = files.pop();
             getAppReviewsFromCSV(file);
         }
