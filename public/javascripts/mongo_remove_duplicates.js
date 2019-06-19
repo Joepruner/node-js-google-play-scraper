@@ -1,6 +1,8 @@
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/app_data";
 
+
+
 MongoClient.connect(url, {
     useNewUrlParser: true
 }, function (err, db) {
@@ -42,32 +44,32 @@ MongoClient.connect(url, {
                 console.log(doc);
                 doc.dups.shift(); // First element skipped for deleting
                 doc.dups.forEach(function (dupId) {
-                    duplicates.push(dupId); // Getting all duplicate ids
+                    duplicates.push(dupId);
+                    // if (duplicates.length <0){
+                    //     console.log("There are no duplicate reviews")
+                    // }
+                    // Getting all duplicate ids
                     //console.log("pushing id ", dupId);
+                    app_reviews.deleteOne({
+                        _id: dupId
+                    }, function (err, obj) {
+                        if (err) throw err;
+                        console.log(obj.result.n + " document(s) deleted");
+                        dbo.close();
+                    });
+                    
                 })
+                // duplicates.forEach(function (id) {
+                // console.log(id + '\n');
+
+                // })
+
             })
-            // Remove all duplicates in one go    
-
-
-            var myquery = {
-                _id:  {
-                    $in: duplicates
-                }
-            };
-            app_reviews.deleteMany(myquery, function (err, obj) {
-                if (err) throw err;
-                console.log(obj.result.n + " document(s) deleted");
-                db.close();
-            });
-
-            // app_reviews.deleteOne({userName:'PsMurMe'}, function (err, obj) {
-            //     if (err) throw err;
-            //     console.log(obj.result.n + " document(s) deleted");
-            //     db.close();
-            // });
         }
     });
+
 });
+
 
 
 
