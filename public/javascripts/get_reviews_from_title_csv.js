@@ -132,14 +132,16 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                     // } catch (err) {
                     //     console.log('Error getting fullDetails.free for ' + app[0].title + " : " + err);
                     // }
-                    // var file_name = JSON.stringify(file);
-                    // var scrape_set = '';
+                    var file_name = JSON.stringify(file);
+                    var scrape_set = '';
 
-                    // if (file_name.includes('category') && file_name.includes('topselling')) {
-                    //     scrape_set = '_category_topselling';
-                    // } else {
-                    //     scrape_set = '_scrape_set_unknown';
-                    // }
+                    if (file_name.includes('category') && file_name.includes('topselling')) {
+                        scrape_set = '_by_category_topselling';
+                    } else if (file_name.includes('worst')) {
+                        scrape_set = '_by_worst_battery'
+                    } else {
+                        scrape_set = '_scrape_set_unknown';
+                    }
 
                     // var file_name = JSON.stringify(file);
                     // var apps_output_stream = fs.createWriteStream(app_details_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
@@ -155,10 +157,11 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                     //     apps_output_stream.write('\n');
                     // }
 
+                    fullDetails.scrape_set = scrape_set;
                     fullDetails.appId = app[0].appId;
 
-                    // var hash = md5(fullDetails.appId + fullDetails.updated);
-                    // fullDetails.hash = hash;
+                    var hash = md5(fullDetails.appId + fullDetails.updated);
+                    fullDetails.hash = hash;
 
                     dbo.collection("app_details").insertOne(fullDetails, function (err, res) {
                         if (err) throw err;
@@ -183,14 +186,16 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                             //     return;
                             // }
 
-                            // var file_name = JSON.stringify(file);
-                            // var scrape_set = '';
+                            var file_name = JSON.stringify(file);
+                            var scrape_set = '';
 
-                            // if (file_name.includes('category') && file_name.includes('topselling')) {
-                            //     scrape_set = '_category_topselling';
-                            // } else {
-                            //     scrape_set = '_scrape_set_unknown';
-                            // }
+                            if (file_name.includes('category') && file_name.includes('topselling')) {
+                                scrape_set = '_by_category_topselling';
+                            } else if (file_name.includes('worst')) {
+                                scrape_set = '_by_worst_battery'
+                            } else {
+                                scrape_set = '_scrape_set_unknown';
+                            }
 
                             // var reviews_output_stream = fs.createWriteStream(reviews_output_path + scrape_set + "_" + 'NEWEST_' + price_collection + '.csv', {
                             //     encoding: 'utf8',
@@ -207,11 +212,17 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file, dbo) {
                             // console.log(review + '\n')
                             // console.log(review[0]);
 
-                            // review[0].appId = app[0].appId;
-
-                            // var hash = md5(review[0].appId + review[0].userName + review[0].text);
-                            // review[0].hash = hash;
+                            try {
+                                review[0].appId = app[0].appId;
+                            }
+                            catch(err){
+                            }
+                            review[0].scrape_set = scrape_set;
                             
+
+                            var hash = md5(review[0].appId + review[0].userName + review[0].text);
+                            review[0].hash = hash;
+
 
                             dbo.collection("app_reviews").insertOne(review[0], function (err, res) {
                                 if (err) throw err;
