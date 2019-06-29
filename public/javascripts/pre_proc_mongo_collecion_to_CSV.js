@@ -1,4 +1,13 @@
-var simple_pp_lt3w_rnascii = require("./pre_proc_functions/simple_pp_lt3w_rnascii.js")
+/**
+ * PREPROCESSING: 
+ * Export MongoDB collection to .CSV files. 
+ * Make all lowercase (func in file).
+ * Reject less than 3 word reviews (from exported func). 
+ * Remove non-ascii chars (from exported func).
+ */
+
+
+var simple_pre_proc_funcs = require("./pre_proc_functions/simple_pre_proc_funcs.js")
 
 var MongoClient = require('mongodb').MongoClient;
 var url = "mongodb://localhost:27017/app_data";
@@ -86,9 +95,10 @@ MongoClient.connect(url, {
     console.log("Writing app reviews to .csv");
     app_reviews.find().forEach(function (doc) {
         // console.log(doc.text);
-        if (simple_pp_lt3w_rnascii.is_lt3_words(doc.text)) {
-
+        if (simple_pre_proc_funcs.is_lt3_words(doc.text)) {
+            //Review is < 3 words, ignoring.
         } else {
+            doc.text = simple_pre_proc_funcs.remove_non_ascii_chars(doc.text);
             var parsed_app_review = json2csvParserReviewsRest.parse(doc);
             var parsed_app_review = parsed_app_review.toLowerCase();
             reviews_output_stream.write(parsed_app_review);
