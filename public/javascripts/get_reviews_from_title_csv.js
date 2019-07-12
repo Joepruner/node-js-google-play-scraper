@@ -136,7 +136,13 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
 
                     if (file_name.includes('category') && file_name.includes('topselling')) {
                         scrape_set = '_category_topselling';
-                    } else {
+                    } else if (file_name.includes('weekly') && file_name.includes('worst')) {
+                        scrape_set = '_weekly_worst';
+                    }
+                    else if (file_name.includes('original8')) {
+                        scrape_set = '_original8_categories';
+                    }
+                    else {
                         scrape_set = '_scrape_set_unknown';
                     }
 
@@ -157,7 +163,7 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                     apps_output_stream.write(parsed_app_details);
                     apps_output_stream.write('\n');
                     apps_output_stream.close();
-                    for (var i = 0; i < 15; i++) {
+                    for (var i = 0; i < 112; i++) {
 
                         if (i % 15 == 0) {
                             var rand = getRndInteger(1, 3);
@@ -165,18 +171,24 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
                         }
 
                         getAppReviews(app[0].appId, i, app[0].title, fullDetails.genreId).then(function (review) {
-                            // if (review == undefined || review.length < 1) {
-                            //     console.log("Error on review page " + i + " for app " + app[0].title +
-                            //         ". Probably reached end of review pages for this app.");
-                            //     return;
-                            // }
+                            if (review == undefined || review.length < 1) {
+                                // console.log("Error on review page " + i + " for app " + app[0].title +
+                                //     ". Probably reached end of review pages for this app.");
+                                return;
+                            }
 
                             var file_name = JSON.stringify(file);
                             var scrape_set = '';
 
                             if (file_name.includes('category') && file_name.includes('topselling')) {
                                 scrape_set = '_category_topselling';
-                            } else {
+                            } else if (file_name.includes('weekly') && file_name.includes('worst')) {
+                                scrape_set = '_weekly_worst';
+                            }
+                            else if (file_name.includes('original8')) {
+                                scrape_set = '_original8_categories';
+                            }
+                            else {
                                 scrape_set = '_scrape_set_unknown';
                             }
 
@@ -203,10 +215,10 @@ var getAppReviewsFromCSV = function getAppReviewsFromCSV(file) {
         });
 };
 
-function stopInterval() {
-    clearInterval(appReviewInterval);
-    console.log("The interval has been cleared.");
-}
+// function stopInterval() {
+//     clearInterval(appReviewInterval);
+//     console.log("The interval has been cleared.");
+// }
 
 var files = fs.readdirSync(directoryPath);
 console.log(files.length + " app title files remaining to be scraped");
@@ -220,7 +232,7 @@ process.on("beforeExit", function () {
         console.log("All files in this directory have been processed");
         console.log("Gracefully shutting down scraper process");
         // stopInterval();
-        return;
+        // return;
     } else {
         file = files.pop();
         getAppReviewsFromCSV(file);
